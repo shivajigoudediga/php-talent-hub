@@ -52,3 +52,6 @@ def notify_registration_success(user_id, email, name, role):
 
 def notify_otp_sent(email):
     print(f"[Notify] OTP sent to {email}")
+    
+def notify_shortlisted(developer_id, job_id):
+    print(f"[Notify] Developer {developer_id} shortlisted for job {job_id}")
