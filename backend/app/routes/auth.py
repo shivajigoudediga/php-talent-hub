@@ -1,89 +1,14 @@
 from flask import Blueprint, request, jsonify
-from app import db, mail
+from app import db
 from app.models import User
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from flask_mail import Message
 from app.utils.otp import generate_otp, get_otp_expiry
-from app.notifications import notify_registration_success, notify_otp_sent
+from app.notifications import notify_registration_success, notify_otp_sent, send_otp_email, send_welcome_email
 from datetime import datetime
 
 auth_bp = Blueprint('auth', __name__)
 
 
-def send_otp_email(user, otp):
-    """Send OTP email to the user."""
-    msg      = Message("Your OTP Code - PHP Talent Hub", recipients=[user.email])
-    msg.body = f"Hi {user.name},\n\nYour OTP is: {otp}\n\nValid for 10 minutes.\n\n- PHP Talent Hub"
-    msg.html = f"""
-    <div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:30px;
-                border:1px solid #e0e0e0;border-radius:8px;">
-        <h2 style="color:#4f46e5;">PHP Talent Hub</h2>
-        <p>Hi <strong>{user.name}</strong>,</p>
-        <p>Your email verification OTP is:</p>
-        <div style="font-size:36px;font-weight:bold;letter-spacing:8px;color:#4f46e5;
-                    padding:20px;background:#f3f4f6;text-align:center;
-                    border-radius:8px;margin:20px 0;">
-            {otp}
-        </div>
-        <p>This code expires in <strong>10 minutes</strong>.</p>
-        <p style="color:#6b7280;font-size:13px;">
-            If you did not create an account, please ignore this email.
-        </p>
-    </div>
-    """
-    mail.send(msg)
-
-
-def send_welcome_email(user):
-    """Send a welcome email after successful OTP verification."""
-    msg      = Message("Welcome to PHP Talent Hub! 🎉", recipients=[user.email])
-    msg.body = f"Hi {user.name},\n\nYour account has been verified successfully!\n\nWelcome to PHP Talent Hub.\n\n- PHP Talent Hub Team"
-
-    if user.role == 'developer':
-        role_items = """
-            <li>Browse and apply to PHP jobs</li>
-            <li>Complete your developer profile</li>
-            <li>Upload your resume</li>
-        """
-    else:
-        role_items = """
-            <li>Post PHP job listings</li>
-            <li>Search for developers</li>
-            <li>Manage applicants</li>
-        """
-
-    msg.html = f"""
-    <div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:30px;
-                border:1px solid #e0e0e0;border-radius:8px;">
-
-        <h2 style="color:#4f46e5;">PHP Talent Hub</h2>
-        <p>Hi <strong>{user.name}</strong>,</p>
-
-        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;
-                    padding:20px;text-align:center;margin:20px 0;">
-            <div style="font-size:48px;">🎉</div>
-            <h3 style="color:#16a34a;margin:10px 0;">Registration Successful!</h3>
-            <p style="color:#15803d;margin:0;">Your account has been verified and is now active.</p>
-        </div>
-
-        <p>You are registered as a <strong>{user.role.capitalize()}</strong>.</p>
-        <p>You can now:</p>
-        <ul style="color:#374151;">
-            {role_items}
-        </ul>
-
-        <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;">
-        <p style="color:#9ca3af;font-size:12px;text-align:center;">
-            © PHP Talent Hub. All rights reserved.
-        </p>
-    </div>
-    """
-    mail.send(msg)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# POST  /api/auth/register
-# ─────────────────────────────────────────────────────────────────────────────
 @auth_bp.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
@@ -116,8 +41,7 @@ def register():
     db.session.commit()
 
     try:
-        send_otp_email(user, otp)
-        print(f"OTP email sent to {user.email}")
+        send_otp_email(user.email, otp)
     except Exception as e:
         print(f"Mail error: {e}")
         print(f"FALLBACK OTP for {user.email}: {otp}")
@@ -129,9 +53,6 @@ def register():
     }), 201
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# POST  /api/auth/verify-otp
-# ─────────────────────────────────────────────────────────────────────────────
 @auth_bp.route('/verify-otp', methods=['POST'])
 def verify_otp():
     data = request.get_json()
@@ -164,16 +85,13 @@ def verify_otp():
         user.otp_expiry = None
         db.session.commit()
 
-        # ── 1. Welcome Email ──────────────────────────────────────────────
         try:
-            send_welcome_email(user)
-            print(f"Welcome email sent to {user.email}")
+            send_welcome_email(user.email, user.name)
         except Exception as e:
             print(f"Welcome email error: {e}")
 
-        # ── 2. Real-time browser notification (Socket.IO) ─────────────────
         try:
-            notify_registration_success(user)
+            notify_registration_success(user.id, user.email, user.name, user.role)
         except Exception as e:
             print(f"Socket notification error: {e}")
 
@@ -189,9 +107,6 @@ def verify_otp():
     return jsonify({"message": "Invalid or expired OTP"}), 400
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# POST  /api/auth/resend-otp
-# ─────────────────────────────────────────────────────────────────────────────
 @auth_bp.route('/resend-otp', methods=['POST'])
 def resend_otp():
     data = request.get_json()
@@ -215,9 +130,8 @@ def resend_otp():
     db.session.commit()
 
     try:
-        send_otp_email(user, otp)
-        notify_otp_sent(user)
-        print(f"Resent OTP to {user.email}")
+        send_otp_email(user.email, otp)
+        notify_otp_sent(user.email)
     except Exception as e:
         print(f"Mail error: {e}")
         print(f"FALLBACK Resent OTP for {user.email}: {otp}")
@@ -227,9 +141,6 @@ def resend_otp():
     }), 200
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# POST  /api/auth/login
-# ─────────────────────────────────────────────────────────────────────────────
 @auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -258,9 +169,6 @@ def login():
     }), 200
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# GET  /api/auth/profile
-# ─────────────────────────────────────────────────────────────────────────────
 @auth_bp.route('/profile', methods=['GET'])
 @jwt_required()
 def get_user_profile():
