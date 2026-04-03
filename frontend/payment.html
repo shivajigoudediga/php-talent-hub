@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payment Modal — Demo</title>
+<style>
+  /* ── Reset / base ─────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; display: flex;
+         align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+
+  /* ── Demo trigger button (replace with your real Apply button) */
+  .demo-trigger {
+    background: #4f46e5; color: #fff; border: none; padding: 14px 32px;
+    border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer;
+    box-shadow: 0 4px 14px rgba(79,70,229,.35); transition: transform .15s, box-shadow .15s;
+  }
+  .demo-trigger:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(79,70,229,.45); }
+
+  /* ── Modal overlay ────────────────────────────────────────── */
+  .overlay {
+    display: none; position: fixed; inset: 0; background: rgba(15,23,42,.55);
+    backdrop-filter: blur(4px); z-index: 1000;
+    align-items: center; justify-content: center; padding: 16px;
+  }
+  .overlay.active { display: flex; }
+
+  /* ── Modal card ───────────────────────────────────────────── */
+  .modal {
+    background: #fff; border-radius: 20px; width: 100%; max-width: 440px;
+    box-shadow: 0 24px 60px rgba(0,0,0,.18); overflow: hidden;
+    animation: slideUp .28s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  /* ── Modal header ─────────────────────────────────────────── */
+  .modal-header {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    padding: 24px 28px 20px; color: #fff; position: relative;
+  }
+  .modal-header h2 { font-size: 20px; font-weight: 700; }
+  .modal-header p  { font-size: 13px; opacity: .85; margin-top: 4px; }
+  .close-btn {
+    position: absolute; top: 16px; right: 18px; background: rgba(255,255,255,.2);
+    border: none; color: #fff; width: 30px; height: 30px; border-radius: 50%;
+    font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+  }
+  .close-btn:hover { background: rgba(255,255,255,.35); }
+
+  /* ── Job summary strip ────────────────────────────────────── */
+  .job-strip {
+    background: #f8faff; border-bottom: 1px solid #e8eaf6;
+    padding: 14px 28px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .job-strip .job-title { font-weight: 600; font-size: 14px; color: #1e293b; }
+  .job-strip .job-fee   { font-weight: 700; font-size: 18px; color: #4f46e5; }
+  .job-strip .fee-label { font-size: 11px; color: #64748b; text-align: right; }
+
+  /* ── Form body ────────────────────────────────────────────── */
+  .modal-body { padding: 24px 28px; }
+
+  .card-visual {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    border-radius: 14px; padding: 20px 22px; color: #fff; margin-bottom: 22px;
+    position: relative; overflow: hidden;
+  }
+  .card-visual::after {
+    content: ''; position: absolute; right: -20px; top: -20px;
+    width: 120px; height: 120px; border-radius: 50%;
+    background: rgba(255,255,255,.06);
+  }
+  .card-chip { width: 36px; height: 26px; background: #d4a853; border-radius: 5px; margin-bottom: 14px; }
+  .card-number-display { font-size: 18px; letter-spacing: 3px; font-family: 'Courier New', monospace;
+                          margin-bottom: 14px; color: rgba(255,255,255,.9); }
+  .card-bottom { display: flex; justify-content: space-between; font-size: 12px; opacity: .7; }
+
+  .form-row { display: flex; gap: 14px; }
+  .form-group { margin-bottom: 16px; flex: 1; }
+  .form-group label { display: block; font-size: 12px; font-weight: 600; color: #475569;
+                       text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .form-group input {
+    width: 100%; padding: 11px 14px; border: 1.5px solid #e2e8f0;
+    border-radius: 9px; font-size: 15px; color: #1e293b; outline: none;
+    transition: border-color .2s, box-shadow .2s; background: #f8fafc;
+  }
+  .form-group input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.12); background: #fff; }
+  .form-group input.error { border-color: #ef4444; }
+
+  .error-msg { color: #ef4444; font-size: 12px; margin-top: 4px; display: none; }
+  .error-msg.show { display: block; }
+
+  /* ── Test cards hint ──────────────────────────────────────── */
+  .test-hint {
+    background: #fffbeb; border: 1px solid #fde68a; border-radius: 9px;
+    padding: 10px 14px; margin-bottom: 18px; font-size: 12px; color: #92400e;
+  }
+  .test-hint strong { display: block; margin-bottom: 4px; color: #78350f; }
+  .test-hint code { background: #fef3c7; padding: 1px 5px; border-radius: 4px; font-family: monospace; }
+
+  /* ── Submit button ────────────────────────────────────────── */
+  .pay-btn {
+    width: 100%; padding: 14px; background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #fff; border: none; border-radius: 10px; font-size: 16px; font-weight: 700;
+    cursor: pointer; transition: opacity .2s, transform .15s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .pay-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
+  .pay-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+  .spinner {
+    width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,.4);
+    border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .secure-note { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 10px; }
+  .secure-note span { margin-right: 4px; }
+
+  /* ── Toast ────────────────────────────────────────────────── */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: #1e293b; color: #fff; padding: 14px 22px; border-radius: 12px;
+    font-size: 14px; font-weight: 500; z-index: 2000; transition: transform .3s ease;
+    display: flex; align-items: center; gap: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.2);
+    max-width: 360px; text-align: center;
+  }
+  .toast.show   { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-left: 4px solid #10b981; }
+  .toast.error   { border-left: 4px solid #ef4444; }
+
+  /* ── Success screen ───────────────────────────────────────── */
+  .success-screen { display: none; padding: 36px 28px; text-align: center; }
+  .success-screen.active { display: block; }
+  .checkmark { font-size: 56px; margin-bottom: 12px; }
+  .success-screen h3 { font-size: 20px; font-weight: 700; color: #1e293b; }
+  .success-screen p  { color: #64748b; margin: 8px 0 20px; font-size: 14px; }
+  .txn-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 9px;
+              padding: 12px 16px; font-size: 13px; color: #166534; margin-bottom: 20px; }
+  .txn-box strong { display: block; font-size: 11px; color: #4ade80; text-transform: uppercase;
+                    letter-spacing: .5px; margin-bottom: 2px; }
+  .done-btn {
+    background: #4f46e5; color: #fff; border: none; padding: 12px 32px;
+    border-radius: 9px; font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Demo trigger — in your real app this is your "Apply" button ── -->
+<button class="demo-trigger" onclick="openPaymentModal({
+  job_id: 7,
+  job_title: 'Senior Laravel Developer',
+  order_id: 'DEMO-A1B2C3D4E5',
+  amount: 99,
+  currency: 'INR',
+  developer: 'John Dev',
+  email: 'john@example.com'
+})">
+  Apply Now — ₹99
+</button>
+
+<!-- ─────────────────────────── MODAL ─────────────────────────────── -->
+<div class="overlay" id="paymentOverlay">
+  <div class="modal" id="paymentModal">
+
+    <!-- Header -->
+    <div class="modal-header">
+      <button class="close-btn" onclick="closePaymentModal()">✕</button>
+      <h2>💳 Complete Payment</h2>
+      <p>Secure demo checkout — no real charge</p>
+    </div>
+
+    <!-- Job strip -->
+    <div class="job-strip">
+      <div>
+        <div class="job-title" id="stripJobTitle">Senior Laravel Developer</div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px;">Application fee</div>
+      </div>
+      <div style="text-align:right">
+        <div class="job-fee" id="stripAmount">₹99</div>
+        <div class="fee-label">One-time</div>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <div class="modal-body" id="paymentForm">
+
+      <!-- Live card preview -->
+      <div class="card-visual">
+        <div class="card-chip"></div>
+        <div class="card-number-display" id="previewNumber">•••• •••• •••• ••••</div>
+        <div class="card-bottom">
+          <div>
+            <div style="font-size:10px;opacity:.6;margin-bottom:2px;">CARD HOLDER</div>
+            <div id="previewName">YOUR NAME</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:10px;opacity:.6;margin-bottom:2px;">EXPIRES</div>
+            <div id="previewExpiry">MM/YY</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Test card hint -->
+      <div class="test-hint">
+        <strong>🧪 Demo test cards</strong>
+        ✅ Success: <code>4111 1111 1111 1111</code> &nbsp;|&nbsp;
+        ❌ Decline: <code>4000 0000 0000 0002</code>
+        <br>Use any future expiry (e.g. <code>12/27</code>) and any 3-digit CVV.
+      </div>
+
+      <!-- Card holder name -->
+      <div class="form-group">
+        <label>Name on Card</label>
+        <input type="text" id="nameOnCard" placeholder="John Smith"
+               oninput="syncPreview()" autocomplete="cc-name">
+        <div class="error-msg" id="nameErr"></div>
+      </div>
+
+      <!-- Card number -->
+      <div class="form-group">
+        <label>Card Number</label>
+        <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456"
+               maxlength="19" oninput="formatCardNumber(this); syncPreview()"
+               autocomplete="cc-number">
+        <div class="error-msg" id="cardErr"></div>
+      </div>
+
+      <!-- Expiry + CVV -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>Expiry</label>
+          <input type="text" id="expiry" placeholder="MM/YY" maxlength="5"
+                 oninput="formatExpiry(this); syncPreview()" autocomplete="cc-exp">
+          <div class="error-msg" id="expiryErr"></div>
+        </div>
+        <div class="form-group">
+          <label>CVV</label>
+          <input type="text" id="cvv" placeholder="•••" maxlength="4"
+                 oninput="syncPreview()" autocomplete="cc-csc">
+          <div class="error-msg" id="cvvErr"></div>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <button class="pay-btn" id="payBtn" onclick="submitPayment()">
+        <div class="spinner" id="spinner"></div>
+        <span id="payBtnText">Pay ₹99 & Apply</span>
+      </button>
+      <div class="secure-note"><span>🔒</span> Demo mode — no real payment processed</div>
+    </div>
+
+    <!-- Success screen (shown after payment) -->
+    <div class="success-screen" id="successScreen">
+      <div class="checkmark">🎉</div>
+      <h3>Application Submitted!</h3>
+      <p>Your payment was successful and your application has been sent to the recruiter.</p>
+      <div class="txn-box">
+        <strong>Transaction ID</strong>
+        <span id="txnId">—</span>
+      </div>
+      <button class="done-btn" onclick="closePaymentModal()">Done</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let currentOrder = null;
+const API_BASE   = '/api';   // adjust if needed
+
+// ── Open modal ─────────────────────────────────────────────────────────────
+function openPaymentModal(orderData) {
+  currentOrder = orderData;
+  document.getElementById('stripJobTitle').textContent = orderData.job_title;
+  document.getElementById('stripAmount').textContent   = `₹${orderData.amount}`;
+  document.getElementById('payBtnText').textContent    = `Pay ₹${orderData.amount} & Apply`;
+
+  resetForm();
+  document.getElementById('paymentForm').style.display   = 'block';
+  document.getElementById('successScreen').classList.remove('active');
+  document.getElementById('paymentOverlay').classList.add('active');
+}
+
+// ── Close modal ────────────────────────────────────────────────────────────
+function closePaymentModal() {
+  document.getElementById('paymentOverlay').classList.remove('active');
+  currentOrder = null;
+}
+document.getElementById('paymentOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('paymentOverlay')) closePaymentModal();
+});
+
+// ── Card input formatters ──────────────────────────────────────────────────
+function formatCardNumber(input) {
+  let v = input.value.replace(/\D/g, '').slice(0, 16);
+  input.value = v.replace(/(.{4})/g, '$1 ').trim();
+}
+function formatExpiry(input) {
+  let v = input.value.replace(/\D/g, '').slice(0, 4);
+  if (v.length >= 3) v = v.slice(0,2) + '/' + v.slice(2);
+  input.value = v;
+}
+
+// ── Live card preview sync ─────────────────────────────────────────────────
+function syncPreview() {
+  const num = document.getElementById('cardNumber').value.trim();
+  document.getElementById('previewNumber').textContent =
+    num ? num.padEnd(19, ' ').replace(/\S{4}(?=\S)/g, m => m + ' ') : '•••• •••• •••• ••••';
+
+  const name = document.getElementById('nameOnCard').value.trim();
+  document.getElementById('previewName').textContent = name.toUpperCase() || 'YOUR NAME';
+
+  const exp = document.getElementById('expiry').value.trim();
+  document.getElementById('previewExpiry').textContent = exp || 'MM/YY';
+}
+
+// ── Reset form ─────────────────────────────────────────────────────────────
+function resetForm() {
+  ['nameOnCard','cardNumber','expiry','cvv'].forEach(id => {
+    document.getElementById(id).value = '';
+    document.getElementById(id).classList.remove('error');
+  });
+  ['nameErr','cardErr','expiryErr','cvvErr'].forEach(id => {
+    const el = document.getElementById(id);
+    el.textContent = ''; el.classList.remove('show');
+  });
+  syncPreview();
+  setLoading(false);
+}
+
+// ── Client-side validation ────────────────────────────────────────────────
+function validateForm() {
+  let ok = true;
+
+  const name   = document.getElementById('nameOnCard').value.trim();
+  const card   = document.getElementById('cardNumber').value.replace(/\s/g,'');
+  const expiry = document.getElementById('expiry').value.trim();
+  const cvv    = document.getElementById('cvv').value.trim();
+
+  // Name
+  if (name.length < 2) {
+    showFieldError('nameOnCard','nameErr','Name on card is required'); ok = false;
+  } else clearFieldError('nameOnCard','nameErr');
+
+  // Card number
+  if (!/^\d{15,16}$/.test(card)) {
+    showFieldError('cardNumber','cardErr','Enter a valid 15 or 16 digit card number'); ok = false;
+  } else clearFieldError('cardNumber','cardErr');
+
+  // Expiry
+  if (!/^\d{2}\/\d{2}$/.test(expiry)) {
+    showFieldError('expiry','expiryErr','Use MM/YY format'); ok = false;
+  } else {
+    const [mm,yy] = expiry.split('/').map(Number);
+    const now = new Date();
+    const expDate = new Date(2000+yy, mm-1);
+    if (mm < 1 || mm > 12) {
+      showFieldError('expiry','expiryErr','Invalid month'); ok = false;
+    } else if (expDate < new Date(now.getFullYear(), now.getMonth())) {
+      showFieldError('expiry','expiryErr','Card has expired'); ok = false;
+    } else clearFieldError('expiry','expiryErr');
+  }
+
+  // CVV
+  if (!/^\d{3,4}$/.test(cvv)) {
+    showFieldError('cvv','cvvErr','Enter 3 or 4 digit CVV'); ok = false;
+  } else clearFieldError('cvv','cvvErr');
+
+  return ok;
+}
+
+function showFieldError(inputId, errId, msg) {
+  document.getElementById(inputId).classList.add('error');
+  const el = document.getElementById(errId);
+  el.textContent = msg; el.classList.add('show');
+}
+function clearFieldError(inputId, errId) {
+  document.getElementById(inputId).classList.remove('error');
+  const el = document.getElementById(errId);
+  el.textContent = ''; el.classList.remove('show');
+}
+
+// ── Submit payment ─────────────────────────────────────────────────────────
+async function submitPayment() {
+  if (!validateForm()) return;
+
+  setLoading(true);
+
+  const payload = {
+    order_id:     currentOrder.order_id,
+    card_number:  document.getElementById('cardNumber').value.replace(/\s/g,''),
+    expiry:       document.getElementById('expiry').value.trim(),
+    cvv:          document.getElementById('cvv').value.trim(),
+    name_on_card: document.getElementById('nameOnCard').value.trim()
+  };
+
+  try {
+    const token = localStorage.getItem('access_token') || '';  // your JWT storage key
+
+    const res = await fetch(`${API_BASE}/jobs/${currentOrder.job_id}/apply`, {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      // Show success screen
+      document.getElementById('txnId').textContent = data.transaction_id;
+      document.getElementById('paymentForm').style.display = 'none';
+      document.getElementById('successScreen').classList.add('active');
+      showToast('✅ Application submitted successfully!', 'success');
+    } else if (res.status === 402) {
+      showToast('❌ ' + data.message, 'error');
+      setLoading(false);
+    } else {
+      const errs = data.errors ? data.errors.join(' ') : data.message;
+      showToast('⚠️ ' + errs, 'error');
+      setLoading(false);
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('⚠️ Network error. Please try again.', 'error');
+    setLoading(false);
+  }
+}
+
+// ── Loading state ──────────────────────────────────────────────────────────
+function setLoading(on) {
+  document.getElementById('payBtn').disabled = on;
+  document.getElementById('spinner').style.display  = on ? 'block' : 'none';
+  document.getElementById('payBtnText').textContent = on
+    ? 'Processing...'
+    : `Pay ₹${currentOrder ? currentOrder.amount : 99} & Apply`;
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+</script>
+</body>
+</html>

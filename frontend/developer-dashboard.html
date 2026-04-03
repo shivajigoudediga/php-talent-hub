@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Developer Dashboard | PHP Talent Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 font-sans min-h-screen">
+
+    <!-- Loading overlay -->
+    <div id="auth-overlay" class="fixed inset-0 bg-white z-[9999] flex items-center justify-center">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+            <p class="text-gray-500 font-medium">Loading dashboard…</p>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-4">
+                    <a href="index.html" class="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">PHP Talent Hub</a>
+                    <div class="hidden md:flex space-x-6 ml-10">
+                        <a href="#" class="text-indigo-600 font-semibold border-b-2 border-indigo-600 pb-1">Dashboard</a>
+                        <a href="job-listings.html" class="text-gray-600 hover:text-indigo-600 transition">Browse Jobs</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="h-9 w-9 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-sm" id="user-avatar">U</div>
+                    <span class="text-gray-700 font-medium text-sm hidden md:block" id="nav-name">Developer</span>
+                    <button id="logout-btn" class="ml-2 text-sm text-gray-500 hover:text-red-600 transition font-medium flex items-center gap-1">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- Welcome + Warning -->
+        <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Welcome back, <span id="user-name" class="text-indigo-600">Developer</span>! 👋</h1>
+                <p class="text-gray-500 text-sm mt-1">Here's your profile and job activity at a glance.</p>
+            </div>
+            <div id="profile-warning" class="hidden bg-red-50 border border-red-200 p-3 rounded-xl flex items-center space-x-3">
+                <i class="fas fa-exclamation-triangle text-red-500"></i>
+                <div>
+                    <p class="text-red-800 font-bold text-sm">Profile Incomplete</p>
+                    <p class="text-red-600 text-xs">Complete your profile to be visible to recruiters.</p>
+                </div>
+                <a href="profile-complete.html" class="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-700 transition">Fix Now</a>
+            </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <button onclick="openAppliedJobsModal()" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:border-indigo-300 hover:shadow-md transition duration-200 group text-left w-full cursor-pointer">
+                <div class="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 group-hover:bg-indigo-100 transition"><i class="fas fa-briefcase text-xl"></i></div>
+                <div>
+                    <p class="text-gray-500 text-xs font-medium">Applied Jobs</p>
+                    <p class="text-2xl font-bold text-gray-900" id="applied-count">—</p>
+                    <p class="text-indigo-600 text-xs font-semibold mt-0.5 group-hover:underline">View all →</p>
+                </div>
+            </button>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                <div class="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600"><i class="fas fa-eye text-xl"></i></div>
+                <div>
+                    <p class="text-gray-500 text-xs font-medium">Profile Views</p>
+                    <p class="text-2xl font-bold text-gray-900" id="views-count">—</p>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                <div class="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center text-green-600"><i class="fas fa-star text-xl"></i></div>
+                <div>
+                    <p class="text-gray-500 text-xs font-medium">Ranking Score</p>
+                    <p class="text-2xl font-bold text-gray-900" id="ranking-score">—</p>
+                </div>
+            </div>
+            <!-- Payments Stat Card -->
+            <button onclick="openTransactionsModal()" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:border-emerald-300 hover:shadow-md transition duration-200 group text-left w-full">
+                <div class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 group-hover:bg-emerald-100 transition">
+                    <i class="fas fa-receipt text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-gray-500 text-xs font-medium">Transactions</p>
+                    <p class="text-2xl font-bold text-gray-900" id="txn-count">—</p>
+                    <p class="text-emerald-600 text-xs font-semibold mt-0.5 group-hover:underline">View history →</p>
+                </div>
+            </button>
+        </div>
+
+        <!-- Main Layout: Left Profile | Right Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+
+            <!-- ═══════════════════════════════════════ -->
+            <!-- LEFT SIDEBAR — Full Profile             -->
+            <!-- ═══════════════════════════════════════ -->
+            <div class="lg:col-span-1 space-y-5">
+
+                <!-- Avatar + Name -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center">
+                    <div class="relative inline-block mb-4">
+                        <div class="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-3xl font-bold mx-auto shadow-lg" id="profile-initials">D</div>
+                        <span id="visibility-badge" class="absolute bottom-0 right-0 w-6 h-6 bg-green-400 rounded-full border-2 border-white flex items-center justify-center" title="Visible to recruiters">
+                            <i class="fas fa-check text-white text-xs"></i>
+                        </span>
+                    </div>
+                    <h2 class="font-bold text-xl text-gray-900" id="profile-name">Developer</h2>
+                    <p class="text-indigo-600 text-sm font-semibold mt-1" id="profile-exp">PHP Developer</p>
+                    <p class="text-gray-400 text-xs mt-1" id="profile-company">—</p>
+
+                    <!-- Profile Completion Bar -->
+                    <div class="mt-4">
+                        <div class="flex justify-between text-xs text-gray-500 mb-1">
+                            <span>Profile Completion</span>
+                            <span id="completion-text" class="font-bold text-indigo-600">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2">
+                            <div id="completion-bar" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all duration-700" style="width:0%"></div>
+                        </div>
+                    </div>
+
+                    <a href="profile-complete.html" class="mt-5 block w-full bg-indigo-50 text-indigo-600 font-bold py-2.5 rounded-xl hover:bg-indigo-100 transition text-sm border border-indigo-100">
+                        <i class="fas fa-edit mr-1"></i> Edit Profile
+                    </a>
+                </div>
+
+                <!-- Personal Info -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                    <h3 class="font-bold text-gray-800 text-sm mb-4 flex items-center gap-2">
+                        <i class="fas fa-user text-indigo-500"></i> Personal Info
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-envelope text-gray-400 mt-0.5 w-4 text-xs"></i>
+                            <div>
+                                <p class="text-xs text-gray-400">Email</p>
+                                <p class="text-sm text-gray-700 font-medium break-all" id="profile-email">—</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-phone text-gray-400 mt-0.5 w-4 text-xs"></i>
+                            <div>
+                                <p class="text-xs text-gray-400">Phone</p>
+                                <p class="text-sm text-gray-700 font-medium" id="profile-phone">—</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-map-marker-alt text-gray-400 mt-0.5 w-4 text-xs"></i>
+                            <div>
+                                <p class="text-xs text-gray-400">Location</p>
+                                <p class="text-sm text-gray-700 font-medium" id="profile-location">—</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Professional Info -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                    <h3 class="font-bold text-gray-800 text-sm mb-4 flex items-center gap-2">
+                        <i class="fas fa-briefcase text-indigo-500"></i> Professional Info
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-clock text-gray-400 mt-0.5 w-4 text-xs"></i>
+                            <div>
+                                <p class="text-xs text-gray-400">Experience</p>
+                                <p class="text-sm text-gray-700 font-medium" id="prof-experience">—</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-building text-gray-400 mt-0.5 w-4 text-xs"></i>
+                            <div>
+                                <p class="text-xs text-gray-400">Current Company</p>
+                                <p class="text-sm text-gray-700 font-medium" id="prof-company">—</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-wallet text-gray-400 mt-0.5 w-4 text-xs"></i>
+                            <div>
+                                <p class="text-xs text-gray-400">Current Salary</p>
+                                <p class="text-sm text-gray-700 font-medium" id="prof-salary">—</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-hourglass-half text-gray-400 mt-0.5 w-4 text-xs"></i>
+                            <div>
+                                <p class="text-xs text-gray-400">Notice Period</p>
+                                <p class="text-sm text-gray-700 font-medium" id="prof-notice">—</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Skills -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                    <h3 class="font-bold text-gray-800 text-sm mb-4 flex items-center gap-2">
+                        <i class="fas fa-code text-indigo-500"></i> Skills
+                    </h3>
+                    <div id="skills-list" class="flex flex-wrap gap-2">
+                        <span class="text-gray-400 text-xs">No skills added yet</span>
+                    </div>
+                </div>
+
+                <!-- Links -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                    <h3 class="font-bold text-gray-800 text-sm mb-4 flex items-center gap-2">
+                        <i class="fas fa-link text-indigo-500"></i> Links
+                    </h3>
+                    <div class="space-y-3">
+                        <a id="github-link" href="#" target="_blank" class="flex items-center gap-3 text-sm text-gray-600 hover:text-gray-900 transition group">
+                            <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-gray-200 transition">
+                                <i class="fab fa-github text-gray-600"></i>
+                            </div>
+                            <span id="github-text" class="truncate">Not added</span>
+                        </a>
+                        <a id="linkedin-link" href="#" target="_blank" class="flex items-center gap-3 text-sm text-gray-600 hover:text-blue-600 transition group">
+                            <div class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition">
+                                <i class="fab fa-linkedin text-blue-500"></i>
+                            </div>
+                            <span id="linkedin-text" class="truncate">Not added</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Upgrade Card -->
+                <div class="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl p-5 text-white">
+                    <h3 class="font-bold text-base mb-1">Upgrade to Pro 🚀</h3>
+                    <p class="text-indigo-200 text-xs mb-4">Get featured at top of recruiter searches.</p>
+                    <button class="w-full bg-white text-indigo-600 font-bold py-2.5 rounded-xl hover:bg-indigo-50 transition text-sm">View Plans</button>
+                </div>
+            </div>
+
+            <!-- ═══════════════════════════════════════ -->
+            <!-- RIGHT CONTENT                           -->
+            <!-- ═══════════════════════════════════════ -->
+            <div class="lg:col-span-3 space-y-6">
+
+                <!-- Recent Applications -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="p-5 border-b border-gray-50 flex justify-between items-center">
+                        <h2 class="font-bold text-gray-900 text-base">Recent Applications</h2>
+                        <a href="job-listings.html" class="text-xs text-indigo-600 font-bold hover:underline">Browse Jobs →</a>
+                    </div>
+                    <div id="applications-list">
+                        <div class="p-12 text-center">
+                            <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-folder-open text-gray-300 text-2xl"></i>
+                            </div>
+                            <h3 class="text-gray-700 font-bold text-sm">No applications yet</h3>
+                            <p class="text-gray-400 mt-1 text-xs">Start applying to jobs to see them here.</p>
+                            <a href="job-listings.html" class="inline-block mt-4 bg-indigo-600 text-white px-5 py-2 rounded-lg font-bold hover:bg-indigo-700 transition text-sm">Browse Jobs</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recommended Jobs -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="p-5 border-b border-gray-50 flex justify-between items-center">
+                        <h2 class="font-bold text-gray-900 text-base">Recommended Jobs</h2>
+                        <a href="job-listings.html" class="text-xs text-indigo-600 font-bold hover:underline">See All →</a>
+                    </div>
+                    <div id="recommended-jobs">
+                        <div class="p-8 text-center">
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:5000/api';
+        const token   = localStorage.getItem('token');
+        const overlay = document.getElementById('auth-overlay');
+
+        // ── Auth guard ──────────────────────────────
+        if (!token) {
+            window.location.href = 'login.html';
+        } else {
+            const userRole = localStorage.getItem('role');
+            if (userRole !== 'developer') {
+                window.location.href = 'recruiter-dashboard.html';
+            }
+        }
+
+        // ── Fill from localStorage immediately ──────
+        const userName  = localStorage.getItem('name')  || 'Developer';
+        const userEmail = localStorage.getItem('email') || '—';
+        const initial   = userName.charAt(0).toUpperCase();
+
+        document.getElementById('user-name').textContent        = userName;
+        document.getElementById('nav-name').textContent         = userName;
+        document.getElementById('profile-name').textContent     = userName;
+        document.getElementById('profile-email').textContent    = userEmail;
+        document.getElementById('profile-initials').textContent = initial;
+        document.getElementById('user-avatar').textContent      = initial;
+
+        overlay.style.display = 'none';
+
+        // ── Logout ──────────────────────────────────
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        });
+
+        // ── Load Applications ───────────────────────
+        async function loadMyApplications() {
+            try {
+                const res  = await fetch(`${API_URL}/jobs/my-applications`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) return;
+                const apps = await res.json();
+                if (!Array.isArray(apps)) return;
+
+                document.getElementById('applied-count').textContent = apps.length;
+                const list = document.getElementById('applications-list');
+
+                if (apps.length > 0) {
+                    list.innerHTML = apps.map(a => `
+                        <div class="p-5 hover:bg-gray-50 transition flex items-center justify-between border-b border-gray-50 last:border-0">
+                            <div>
+                                <h4 class="font-bold text-gray-900 text-sm">${a.job_title}</h4>
+                                <p class="text-xs text-gray-400 mt-1">
+                                    <i class="fas fa-map-marker-alt mr-1"></i>${a.job_location}
+                                    &nbsp;•&nbsp;
+                                    <i class="fas fa-calendar mr-1"></i>${new Date(a.applied_at).toLocaleDateString()}
+                                </p>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-xs font-bold ${
+                                a.status === 'shortlisted' ? 'bg-green-50 text-green-600 border border-green-200' :
+                                a.status === 'rejected'    ? 'bg-red-50 text-red-600 border border-red-200' :
+                                'bg-blue-50 text-blue-600 border border-blue-200'
+                            }">${a.status}</span>
+                        </div>`).join('');
+                }
+            } catch (err) {
+                console.warn('Applications load failed:', err.message);
+            }
+        }
+
+        // ── Load Full Profile ───────────────────────
+        async function loadProfile() {
+            try {
+                const res  = await fetch(`${API_URL}/developer/profile`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+
+                // ── Personal info ──
+                if (data.basic) {
+                    if (data.basic.phone)    document.getElementById('profile-phone').textContent    = data.basic.phone;
+                    if (data.basic.location) document.getElementById('profile-location').textContent = data.basic.location;
+                }
+
+                // ── Professional info ──
+                if (data.professional) {
+                    const p = data.professional;
+                    if (p.experience_years) {
+                        document.getElementById('prof-experience').textContent = `${p.experience_years} Years`;
+                        document.getElementById('profile-exp').textContent     = `${p.experience_years} Yrs Experience`;
+                    }
+                    if (p.current_company) {
+                        document.getElementById('prof-company').textContent  = p.current_company;
+                        document.getElementById('profile-company').textContent = p.current_company;
+                    }
+                    if (p.current_salary)  document.getElementById('prof-salary').textContent  = p.current_salary;
+                    if (p.notice_period)   document.getElementById('prof-notice').textContent   = p.notice_period;
+
+                    // GitHub & LinkedIn
+                    if (p.github_link) {
+                        const el = document.getElementById('github-link');
+                        el.href = p.github_link;
+                        document.getElementById('github-text').textContent = p.github_link.replace('https://','');
+                    }
+                    if (p.linkedin_link) {
+                        const el = document.getElementById('linkedin-link');
+                        el.href = p.linkedin_link;
+                        document.getElementById('linkedin-text').textContent = p.linkedin_link.replace('https://','');
+                    }
+                }
+
+                // ── Skills ──
+                if (data.skills && data.skills.length > 0) {
+                    const levelColor = {
+                        'Expert':       'bg-indigo-100 text-indigo-700 border border-indigo-200',
+                        'Intermediate': 'bg-purple-100 text-purple-700 border border-purple-200',
+                        'Beginner':     'bg-gray-100 text-gray-600 border border-gray-200'
+                    };
+                    document.getElementById('skills-list').innerHTML = data.skills.map(s => `
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold ${levelColor[s.skill_level] || 'bg-gray-100 text-gray-600'}">
+                            ${s.skill_name}
+                            <span class="opacity-60 font-normal ml-1">${s.skill_level}</span>
+                        </span>`).join('');
+                }
+
+                // ── Profile completion ──
+                if (data.completion_percentage !== undefined) {
+                    const pct = data.completion_percentage;
+                    document.getElementById('completion-text').textContent = `${pct}%`;
+                    document.getElementById('completion-bar').style.width  = `${pct}%`;
+                    document.getElementById('ranking-score').textContent   = (pct / 10).toFixed(1);
+                    if (pct < 70) document.getElementById('profile-warning').classList.remove('hidden');
+                }
+
+                // ── Visibility badge ──
+                if (data.is_visible === false) {
+                    const badge = document.getElementById('visibility-badge');
+                    badge.classList.replace('bg-green-400', 'bg-gray-300');
+                    badge.title = 'Hidden from recruiters';
+                    badge.innerHTML = '<i class="fas fa-eye-slash text-white text-xs"></i>';
+                }
+
+            } catch (err) {
+                console.warn('Profile load failed:', err.message);
+            }
+        }
+
+        // ── Load Recommended Jobs ───────────────────
+        async function loadRecommendedJobs() {
+            try {
+                const res  = await fetch(`${API_URL}/jobs/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) return;
+                const jobs = await res.json();
+                const container = document.getElementById('recommended-jobs');
+
+                if (!Array.isArray(jobs) || jobs.length === 0) {
+                    container.innerHTML = '<div class="p-8 text-center text-gray-400 text-sm">No jobs available right now.</div>';
+                    return;
+                }
+
+                container.innerHTML = jobs.slice(0, 4).map(j => `
+                    <div class="p-5 hover:bg-gray-50 transition border-b border-gray-50 last:border-0 flex items-start justify-between gap-4">
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-900 text-sm">${j.title}</h4>
+                            <div class="flex flex-wrap gap-3 mt-1 text-xs text-gray-400">
+                                <span><i class="fas fa-map-marker-alt mr-1"></i>${j.location}</span>
+                                <span><i class="fas fa-briefcase mr-1"></i>${j.experience_required} yrs</span>
+                                <span><i class="fas fa-wallet mr-1"></i>${j.salary_range}</span>
+                            </div>
+                            <div class="mt-2 flex flex-wrap gap-1">
+                                ${j.frameworks.split(',').map(f => `
+                                    <span class="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded-full uppercase">${f.trim()}</span>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <button onclick="applyToJob(${j.id}, this)"
+                            class="shrink-0 bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 transition">
+                            Apply
+                        </button>
+                    </div>`).join('');
+            } catch (err) {
+                document.getElementById('recommended-jobs').innerHTML =
+                    '<div class="p-8 text-center text-gray-400 text-sm">Could not load jobs.</div>';
+            }
+        }
+
+        // ── Apply to Job — Step 1: initiate payment ─
+        let _applyBtn = null;
+
+        async function applyToJob(jobId, btn) {
+            btn.disabled = true;
+            btn.textContent = '...';
+            _applyBtn = btn;
+            try {
+                const res    = await fetch(`${API_URL}/jobs/${jobId}/initiate-payment`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const order = await res.json();
+                if (!res.ok) {
+                    showDashToast('⚠️ ' + (order.message || 'Cannot initiate payment.'), 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Apply';
+                    return;
+                }
+                // Step 2: open payment modal with order data
+                openPaymentModal(order);
+                btn.textContent = 'Apply';
+                btn.disabled = false;
+            } catch (err) {
+                showDashToast('⚠️ Connection error. Is the server running?', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Apply';
+            }
+        }
+
+        function showDashToast(msg, type = 'success') {
+            const t = document.getElementById('dash-toast');
+            t.textContent = msg;
+            t.className = `dash-toast ${type} show`;
+            setTimeout(() => t.classList.remove('show'), 4000);
+        }
+
+        // ── Init ────────────────────────────────────
+        loadMyApplications().then(() => {
+            // After apps load, also show txn count in the stat card
+            fetch(`${API_URL}/jobs/my-applications`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }).then(r => r.ok ? r.json() : []).then(apps => {
+                const paidCount = Array.isArray(apps) ? apps.filter(a => a.is_paid).length : 0;
+                document.getElementById('txn-count').textContent = paidCount;
+            }).catch(() => {
+                document.getElementById('txn-count').textContent = '0';
+            });
+        });
+        loadProfile();
+        loadRecommendedJobs();
+    </script>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- PAYMENT MODAL                                        -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <style>
+        .pay-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(15,23,42,.55); backdrop-filter: blur(4px);
+            z-index: 1000; align-items: center; justify-content: center; padding: 16px;
+        }
+        .pay-overlay.active { display: flex; }
+        .pay-modal {
+            background: #fff; border-radius: 20px; width: 100%; max-width: 440px;
+            box-shadow: 0 24px 60px rgba(0,0,0,.18); overflow: hidden;
+            animation: paySlideUp .28s cubic-bezier(.34,1.56,.64,1);
+        }
+        @keyframes paySlideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .pay-modal-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            padding: 24px 28px 20px; color: #fff; position: relative;
+        }
+        .pay-modal-header h2 { font-size: 20px; font-weight: 700; }
+        .pay-modal-header p  { font-size: 13px; opacity: .85; margin-top: 4px; }
+        .pay-close-btn {
+            position: absolute; top: 16px; right: 18px;
+            background: rgba(255,255,255,.2); border: none; color: #fff;
+            width: 30px; height: 30px; border-radius: 50%; font-size: 18px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .pay-close-btn:hover { background: rgba(255,255,255,.35); }
+        .pay-job-strip {
+            background: #f8faff; border-bottom: 1px solid #e8eaf6;
+            padding: 14px 28px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .pay-job-title { font-weight: 600; font-size: 14px; color: #1e293b; }
+        .pay-job-fee   { font-weight: 700; font-size: 18px; color: #4f46e5; }
+        .pay-body { padding: 24px 28px; }
+        .pay-card-visual {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-radius: 14px; padding: 20px 22px; color: #fff; margin-bottom: 22px;
+            position: relative; overflow: hidden;
+        }
+        .pay-card-visual::after {
+            content: ''; position: absolute; right: -20px; top: -20px;
+            width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,.06);
+        }
+        .pay-chip { width: 36px; height: 26px; background: #d4a853; border-radius: 5px; margin-bottom: 14px; }
+        .pay-num-display { font-size: 18px; letter-spacing: 3px; font-family: 'Courier New', monospace;
+                            margin-bottom: 14px; color: rgba(255,255,255,.9); }
+        .pay-card-bottom { display: flex; justify-content: space-between; font-size: 12px; opacity: .7; }
+        .pay-form-row { display: flex; gap: 14px; }
+        .pay-form-group { margin-bottom: 16px; flex: 1; }
+        .pay-form-group label { display: block; font-size: 12px; font-weight: 600; color: #475569;
+                                text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+        .pay-form-group input {
+            width: 100%; padding: 11px 14px; border: 1.5px solid #e2e8f0;
+            border-radius: 9px; font-size: 15px; color: #1e293b; outline: none;
+            transition: border-color .2s, box-shadow .2s; background: #f8fafc;
+        }
+        .pay-form-group input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.12); background: #fff; }
+        .pay-form-group input.pay-error { border-color: #ef4444; }
+        .pay-err-msg { color: #ef4444; font-size: 12px; margin-top: 4px; display: none; }
+        .pay-err-msg.show { display: block; }
+        .pay-test-hint {
+            background: #fffbeb; border: 1px solid #fde68a; border-radius: 9px;
+            padding: 10px 14px; margin-bottom: 18px; font-size: 12px; color: #92400e;
+        }
+        .pay-test-hint strong { display: block; margin-bottom: 4px; color: #78350f; }
+        .pay-test-hint code { background: #fef3c7; padding: 1px 5px; border-radius: 4px; font-family: monospace; }
+        .pay-submit-btn {
+            width: 100%; padding: 14px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: #fff; border: none; border-radius: 10px; font-size: 16px; font-weight: 700;
+            cursor: pointer; transition: opacity .2s, transform .15s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .pay-submit-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
+        .pay-submit-btn:disabled { opacity: .6; cursor: not-allowed; }
+        .pay-spinner {
+            width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,.4);
+            border-top-color: #fff; border-radius: 50%;
+            animation: paySpinAnim .7s linear infinite; display: none;
+        }
+        @keyframes paySpinAnim { to { transform: rotate(360deg); } }
+        .pay-secure-note { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 10px; }
+        .pay-success-screen { display: none; padding: 36px 28px; text-align: center; }
+        .pay-success-screen.active { display: block; }
+        .pay-checkmark { font-size: 56px; margin-bottom: 12px; }
+        .pay-success-screen h3 { font-size: 20px; font-weight: 700; color: #1e293b; }
+        .pay-success-screen p  { color: #64748b; margin: 8px 0 20px; font-size: 14px; }
+        .pay-txn-box {
+            background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 9px;
+            padding: 12px 16px; font-size: 13px; color: #166534; margin-bottom: 20px;
+        }
+        .pay-txn-box strong { display: block; font-size: 11px; color: #4ade80;
+                               text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px; }
+        .pay-done-btn {
+            background: #4f46e5; color: #fff; border: none;
+            padding: 12px 32px; border-radius: 9px; font-size: 15px; font-weight: 600; cursor: pointer;
+        }
+        /* Dashboard toast */
+        .dash-toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+            background: #1e293b; color: #fff; padding: 14px 22px; border-radius: 12px;
+            font-size: 14px; font-weight: 500; z-index: 2000; transition: transform .3s ease;
+            display: flex; align-items: center; gap: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,.2); max-width: 360px; text-align: center;
+        }
+        .dash-toast.show    { transform: translateX(-50%) translateY(0); }
+        .dash-toast.success { border-left: 4px solid #10b981; }
+        .dash-toast.error   { border-left: 4px solid #ef4444; }
+    </style>
+
+    <!-- Payment modal markup -->
+    <div class="pay-overlay" id="paymentOverlay">
+        <div class="pay-modal" id="paymentModal">
+            <div class="pay-modal-header">
+                <button class="pay-close-btn" onclick="closePaymentModal()">✕</button>
+                <h2>💳 Complete Payment</h2>
+                <p>Secure demo checkout — no real charge</p>
+            </div>
+            <div class="pay-job-strip">
+                <div>
+                    <div class="pay-job-title" id="payStripTitle">Job Title</div>
+                    <div style="font-size:12px;color:#64748b;margin-top:2px;">Application fee</div>
+                </div>
+                <div style="text-align:right">
+                    <div class="pay-job-fee" id="payStripAmount">₹99</div>
+                    <div style="font-size:11px;color:#64748b;">One-time</div>
+                </div>
+            </div>
+            <div class="pay-body" id="payFormWrap">
+                <div class="pay-card-visual">
+                    <div class="pay-chip"></div>
+                    <div class="pay-num-display" id="payPreviewNum">•••• •••• •••• ••••</div>
+                    <div class="pay-card-bottom">
+                        <div>
+                            <div style="font-size:10px;opacity:.6;margin-bottom:2px;">CARD HOLDER</div>
+                            <div id="payPreviewName">YOUR NAME</div>
+                        </div>
+                        <div style="text-align:right">
+                            <div style="font-size:10px;opacity:.6;margin-bottom:2px;">EXPIRES</div>
+                            <div id="payPreviewExpiry">MM/YY</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pay-test-hint">
+                    <strong>🧪 Demo test cards</strong>
+                    ✅ Success: <code>4111 1111 1111 1111</code> &nbsp;|&nbsp;
+                    ❌ Decline: <code>4000 0000 0000 0002</code><br>
+                    Any future expiry (e.g. <code>12/27</code>) and any 3-digit CVV.
+                </div>
+                <div class="pay-form-group">
+                    <label>Name on Card</label>
+                    <input type="text" id="payName" placeholder="John Smith" oninput="paySyncPreview()" autocomplete="cc-name">
+                    <div class="pay-err-msg" id="payNameErr"></div>
+                </div>
+                <div class="pay-form-group">
+                    <label>Card Number</label>
+                    <input type="text" id="payCardNum" placeholder="1234 5678 9012 3456" maxlength="19"
+                           oninput="payFormatCard(this);paySyncPreview()" autocomplete="cc-number">
+                    <div class="pay-err-msg" id="payCardErr"></div>
+                </div>
+                <div class="pay-form-row">
+                    <div class="pay-form-group">
+                        <label>Expiry</label>
+                        <input type="text" id="payExpiry" placeholder="MM/YY" maxlength="5"
+                               oninput="payFormatExpiry(this);paySyncPreview()" autocomplete="cc-exp">
+                        <div class="pay-err-msg" id="payExpiryErr"></div>
+                    </div>
+                    <div class="pay-form-group">
+                        <label>CVV</label>
+                        <input type="text" id="payCvv" placeholder="•••" maxlength="4"
+                               oninput="paySyncPreview()" autocomplete="cc-csc">
+                        <div class="pay-err-msg" id="payCvvErr"></div>
+                    </div>
+                </div>
+                <button class="pay-submit-btn" id="paySubmitBtn" onclick="submitDashPayment()">
+                    <div class="pay-spinner" id="paySpinner"></div>
+                    <span id="payBtnLabel">Pay ₹99 & Apply</span>
+                </button>
+                <div class="pay-secure-note">🔒 Demo mode — no real payment processed</div>
+            </div>
+            <div class="pay-success-screen" id="paySuccessScreen">
+                <div class="pay-checkmark">🎉</div>
+                <h3>Application Submitted!</h3>
+                <p>Your payment was successful and your application has been sent to the recruiter.</p>
+                <div class="pay-txn-box">
+                    <strong>Transaction ID</strong>
+                    <span id="payTxnId">—</span>
+                </div>
+                <button class="pay-done-btn" onclick="closePaymentModal()">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard toast -->
+    <div class="dash-toast" id="dash-toast"></div>
+
+    <script>
+        let _currentOrder = null;
+
+        function openPaymentModal(orderData) {
+            _currentOrder = orderData;
+            document.getElementById('payStripTitle').textContent  = orderData.job_title;
+            document.getElementById('payStripAmount').textContent = `₹${orderData.amount}`;
+            document.getElementById('payBtnLabel').textContent    = `Pay ₹${orderData.amount} & Apply`;
+            payResetForm();
+            document.getElementById('payFormWrap').style.display = 'block';
+            document.getElementById('paySuccessScreen').classList.remove('active');
+            document.getElementById('paymentOverlay').classList.add('active');
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentOverlay').classList.remove('active');
+            _currentOrder = null;
+        }
+
+        document.getElementById('paymentOverlay').addEventListener('click', e => {
+            if (e.target === document.getElementById('paymentOverlay')) closePaymentModal();
+        });
+
+        function payFormatCard(input) {
+            let v = input.value.replace(/\D/g,'').slice(0,16);
+            input.value = v.replace(/(.{4})/g,'$1 ').trim();
+        }
+        function payFormatExpiry(input) {
+            let v = input.value.replace(/\D/g,'').slice(0,4);
+            if (v.length >= 3) v = v.slice(0,2) + '/' + v.slice(2);
+            input.value = v;
+        }
+        function paySyncPreview() {
+            const num = document.getElementById('payCardNum').value.trim();
+            document.getElementById('payPreviewNum').textContent = num || '•••• •••• •••• ••••';
+            document.getElementById('payPreviewName').textContent = (document.getElementById('payName').value.trim().toUpperCase()) || 'YOUR NAME';
+            document.getElementById('payPreviewExpiry').textContent = document.getElementById('payExpiry').value.trim() || 'MM/YY';
+        }
+        function payResetForm() {
+            ['payName','payCardNum','payExpiry','payCvv'].forEach(id => {
+                document.getElementById(id).value = '';
+                document.getElementById(id).classList.remove('pay-error');
+            });
+            ['payNameErr','payCardErr','payExpiryErr','payCvvErr'].forEach(id => {
+                const el = document.getElementById(id);
+                el.textContent = ''; el.classList.remove('show');
+            });
+            paySyncPreview();
+            paySetLoading(false);
+        }
+        function payShowErr(inputId, errId, msg) {
+            document.getElementById(inputId).classList.add('pay-error');
+            const el = document.getElementById(errId);
+            el.textContent = msg; el.classList.add('show');
+        }
+        function payClearErr(inputId, errId) {
+            document.getElementById(inputId).classList.remove('pay-error');
+            const el = document.getElementById(errId);
+            el.textContent = ''; el.classList.remove('show');
+        }
+        function payValidate() {
+            let ok = true;
+            const name  = document.getElementById('payName').value.trim();
+            const card  = document.getElementById('payCardNum').value.replace(/\s/g,'');
+            const expiry = document.getElementById('payExpiry').value.trim();
+            const cvv   = document.getElementById('payCvv').value.trim();
+
+            if (name.length < 2) { payShowErr('payName','payNameErr','Name on card is required'); ok=false; }
+            else payClearErr('payName','payNameErr');
+
+            if (!/^\d{15,16}$/.test(card)) { payShowErr('payCardNum','payCardErr','Enter a valid 15 or 16 digit card number'); ok=false; }
+            else payClearErr('payCardNum','payCardErr');
+
+            if (!/^\d{2}\/\d{2}$/.test(expiry)) { payShowErr('payExpiry','payExpiryErr','Use MM/YY format'); ok=false; }
+            else {
+                const [mm,yy] = expiry.split('/').map(Number);
+                const now = new Date();
+                if (mm<1||mm>12) { payShowErr('payExpiry','payExpiryErr','Invalid month'); ok=false; }
+                else if (new Date(2000+yy,mm-1) < new Date(now.getFullYear(),now.getMonth())) {
+                    payShowErr('payExpiry','payExpiryErr','Card has expired'); ok=false;
+                } else payClearErr('payExpiry','payExpiryErr');
+            }
+
+            if (!/^\d{3,4}$/.test(cvv)) { payShowErr('payCvv','payCvvErr','Enter 3 or 4 digit CVV'); ok=false; }
+            else payClearErr('payCvv','payCvvErr');
+
+            return ok;
+        }
+        function paySetLoading(on) {
+            document.getElementById('paySubmitBtn').disabled = on;
+            document.getElementById('paySpinner').style.display = on ? 'block' : 'none';
+            document.getElementById('payBtnLabel').textContent = on
+                ? 'Processing...'
+                : `Pay ₹${_currentOrder ? _currentOrder.amount : 99} & Apply`;
+        }
+
+        async function submitDashPayment() {
+            if (!payValidate()) return;
+            paySetLoading(true);
+
+            const payload = {
+                order_id:     _currentOrder.order_id,
+                card_number:  document.getElementById('payCardNum').value.replace(/\s/g,''),
+                expiry:       document.getElementById('payExpiry').value.trim(),
+                cvv:          document.getElementById('payCvv').value.trim(),
+                name_on_card: document.getElementById('payName').value.trim()
+            };
+
+            try {
+                const res  = await fetch(`${API_URL}/jobs/${_currentOrder.job_id}/apply`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type':  'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    document.getElementById('payTxnId').textContent = data.transaction_id;
+                    document.getElementById('payFormWrap').style.display = 'none';
+                    document.getElementById('paySuccessScreen').classList.add('active');
+                    showDashToast('✅ Application submitted successfully!', 'success');
+                    loadMyApplications();  // refresh application list
+                    _txnData = null;       // invalidate txn cache so next open refetches
+                } else if (res.status === 402) {
+                    showDashToast('❌ ' + data.message, 'error');
+                    paySetLoading(false);
+                } else {
+                    const errs = data.errors ? data.errors.join(' ') : data.message;
+                    showDashToast('⚠️ ' + errs, 'error');
+                    paySetLoading(false);
+                }
+            } catch (err) {
+                showDashToast('⚠️ Network error. Is the server running?', 'error');
+                paySetLoading(false);
+            }
+        }
+    </script>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- TRANSACTIONS MODAL                                    -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <style>
+        .txn-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(15,23,42,.55); backdrop-filter: blur(4px);
+            z-index: 1100; align-items: center; justify-content: center; padding: 16px;
+        }
+        .txn-overlay.active { display: flex; }
+        .txn-modal {
+            background: #fff; border-radius: 20px; width: 100%; max-width: 560px;
+            max-height: 85vh; display: flex; flex-direction: column;
+            box-shadow: 0 24px 60px rgba(0,0,0,.18);
+            animation: txnSlideUp .28s cubic-bezier(.34,1.56,.64,1);
+        }
+        @keyframes txnSlideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .txn-modal-header {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            padding: 22px 28px; color: #fff; border-radius: 20px 20px 0 0; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .txn-modal-header h2 { font-size: 18px; font-weight: 700; }
+        .txn-modal-header p  { font-size: 12px; opacity: .85; margin-top: 2px; }
+        .txn-close-btn {
+            background: rgba(255,255,255,.2); border: none; color: #fff;
+            width: 30px; height: 30px; border-radius: 50%; font-size: 18px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .txn-close-btn:hover { background: rgba(255,255,255,.35); }
+        .txn-summary-bar {
+            display: flex; border-bottom: 1px solid #f1f5f9; flex-shrink: 0;
+        }
+        .txn-summary-item {
+            flex: 1; padding: 14px 20px; text-align: center; border-right: 1px solid #f1f5f9;
+        }
+        .txn-summary-item:last-child { border-right: none; }
+        .txn-summary-val { font-size: 20px; font-weight: 800; color: #1e293b; }
+        .txn-summary-lbl { font-size: 11px; color: #94a3b8; margin-top: 2px; font-weight: 500; text-transform: uppercase; letter-spacing: .4px; }
+        .txn-body { overflow-y: auto; flex: 1; padding: 8px 0; }
+        .txn-empty { padding: 48px 28px; text-align: center; color: #94a3b8; }
+        .txn-empty i { font-size: 40px; margin-bottom: 12px; display: block; }
+        .txn-row {
+            display: flex; align-items: center; gap: 14px;
+            padding: 14px 24px; border-bottom: 1px solid #f8fafc; transition: background .15s;
+        }
+        .txn-row:last-child { border-bottom: none; }
+        .txn-row:hover { background: #f8fafc; }
+        .txn-icon {
+            width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; font-size: 16px;
+        }
+        .txn-icon.success { background: #dcfce7; color: #16a34a; }
+        .txn-info { flex: 1; min-width: 0; }
+        .txn-title { font-size: 14px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .txn-meta  { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+        .txn-right { text-align: right; flex-shrink: 0; }
+        .txn-amount { font-size: 15px; font-weight: 700; color: #1e293b; }
+        .txn-badge {
+            display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px;
+            border-radius: 20px; text-transform: uppercase; letter-spacing: .4px; margin-top: 3px;
+        }
+        .txn-badge.success { background: #dcfce7; color: #16a34a; }
+        .txn-modal-footer {
+            padding: 14px 24px; border-top: 1px solid #f1f5f9;
+            font-size: 12px; color: #94a3b8; text-align: center; flex-shrink: 0;
+            border-radius: 0 0 20px 20px;
+        }
+    </style>
+
+    <div class="txn-overlay" id="txnOverlay">
+        <div class="txn-modal">
+            <div class="txn-modal-header">
+                <div>
+                    <h2>💳 My Transactions</h2>
+                    <p>Application fee payment history</p>
+                </div>
+                <button class="txn-close-btn" onclick="closeTransactionsModal()">✕</button>
+            </div>
+            <div class="txn-summary-bar">
+                <div class="txn-summary-item">
+                    <div class="txn-summary-val" id="txnTotalCount">—</div>
+                    <div class="txn-summary-lbl">Total Apps</div>
+                </div>
+                <div class="txn-summary-item">
+                    <div class="txn-summary-val" id="txnTotalAmount">—</div>
+                    <div class="txn-summary-lbl">Total Spent</div>
+                </div>
+                <div class="txn-summary-item">
+                    <div class="txn-summary-val" id="txnSuccessCount">—</div>
+                    <div class="txn-summary-lbl">Paid Txns</div>
+                </div>
+            </div>
+            <div class="txn-body" id="txnBody">
+                <div style="padding:40px;text-align:center;">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto"></div>
+                </div>
+            </div>
+            <div class="txn-modal-footer">🔒 Demo mode — no real payments processed</div>
+        </div>
+    </div>
+
+    <script>
+        let _txnData = null;
+
+        function openTransactionsModal() {
+            document.getElementById('txnOverlay').classList.add('active');
+            if (!_txnData) loadTransactions();
+        }
+
+        function closeTransactionsModal() {
+            document.getElementById('txnOverlay').classList.remove('active');
+        }
+
+        document.getElementById('txnOverlay').addEventListener('click', e => {
+            if (e.target === document.getElementById('txnOverlay')) closeTransactionsModal();
+        });
+
+        async function loadTransactions() {
+            const body = document.getElementById('txnBody');
+            try {
+                const res = await fetch(`${API_URL}/jobs/my-applications`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error('API error');
+                const apps = await res.json();
+
+                const paidApps = apps.filter(a => a.is_paid);
+                _txnData = paidApps;
+
+                const totalAmt = paidApps.length * 99;
+
+                document.getElementById('txnTotalCount').textContent  = apps.length;
+                document.getElementById('txnTotalAmount').textContent = `₹${totalAmt}`;
+                document.getElementById('txnSuccessCount').textContent = paidApps.length;
+                document.getElementById('txn-count').textContent = paidApps.length;
+
+                if (paidApps.length === 0) {
+                    body.innerHTML = `
+                        <div class="txn-empty">
+                            <i class="fas fa-receipt"></i>
+                            <p class="font-semibold text-gray-600 mb-1">No transactions yet</p>
+                            <p class="text-sm">Apply to jobs to see your payment history here.</p>
+                        </div>`;
+                    return;
+                }
+
+                body.innerHTML = paidApps.map(a => {
+                    const date = new Date(a.applied_at).toLocaleDateString('en-IN', {
+                        day: '2-digit', month: 'short', year: 'numeric'
+                    });
+                    const time = new Date(a.applied_at).toLocaleTimeString('en-IN', {
+                        hour: '2-digit', minute: '2-digit'
+                    });
+                    return `
+                    <div class="txn-row">
+                        <div class="txn-icon success"><i class="fas fa-check-circle"></i></div>
+                        <div class="txn-info">
+                            <div class="txn-title">${a.job_title}</div>
+                            <div class="txn-meta">
+                                <i class="fas fa-map-marker-alt mr-1"></i>${a.job_location}
+                                &nbsp;·&nbsp;
+                                <i class="fas fa-calendar mr-1"></i>${date} at ${time}
+                            </div>
+                        </div>
+                        <div class="txn-right">
+                            <div class="txn-amount">₹99</div>
+                            <span class="txn-badge success">Paid</span>
+                        </div>
+                    </div>`;
+                }).join('');
+
+            } catch (err) {
+                body.innerHTML = `
+                    <div class="txn-empty">
+                        <i class="fas fa-exclamation-circle" style="color:#ef4444"></i>
+                        <p class="font-semibold text-gray-600">Could not load transactions</p>
+                        <p class="text-sm">Make sure the server is running.</p>
+                    </div>`;
+            }
+        }
+
+        // Also update txn count when applications are loaded initially
+        const _origLoadMyApplications = loadMyApplications;
+        async function loadMyApplicationsWithTxn() {
+            await _origLoadMyApplications();
+            // Refresh txn count from cached data if available
+            if (!_txnData) {
+                try {
+                    const res = await fetch(`${API_URL}/jobs/my-applications`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                        const apps = await res.json();
+                        const paidCount = apps.filter(a => a.is_paid).length;
+                        document.getElementById('txn-count').textContent = paidCount;
+                    }
+                } catch(_) {}
+            }
+        }
+    </script>
+
+    <!-- ═══════════════════════════ APPLIED JOBS MODAL ═══════════════════════════ -->
+    <style>
+        .aj-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(15,23,42,.55); backdrop-filter: blur(4px);
+            z-index: 1200; align-items: flex-end; justify-content: center;
+        }
+        .aj-overlay.active { display: flex; }
+        .aj-drawer {
+            background: #fff; width: 100%; max-width: 680px; max-height: 88vh;
+            border-radius: 24px 24px 0 0; display: flex; flex-direction: column;
+            box-shadow: 0 -12px 60px rgba(0,0,0,.15);
+            animation: ajSlideUp .32s cubic-bezier(.34,1.3,.64,1);
+        }
+        @media (min-width: 640px) {
+            .aj-overlay { align-items: center; }
+            .aj-drawer { border-radius: 20px; max-height: 85vh; }
+        }
+        @keyframes ajSlideUp { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .aj-header { padding: 20px 24px 16px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+        .aj-header h2 { font-size: 18px; font-weight: 700; color: #1e293b; }
+        .aj-header p  { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+        .aj-close { width: 32px; height: 32px; border-radius: 50%; border: none; background: #f1f5f9; color: #64748b; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; }
+        .aj-close:hover { background: #e2e8f0; }
+        .aj-filter-bar { padding: 12px 24px; border-bottom: 1px solid #f8fafc; display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+        .aj-filter-btn { padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1.5px solid #e2e8f0; background: #fff; color: #64748b; cursor: pointer; transition: all .15s; }
+        .aj-filter-btn.active { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+        .aj-body { overflow-y: auto; flex: 1; padding: 8px 0; }
+        .aj-empty { padding: 48px 24px; text-align: center; color: #94a3b8; }
+        .aj-empty i { font-size: 40px; margin-bottom: 12px; display: block; }
+        .aj-row { display: flex; align-items: flex-start; gap: 14px; padding: 14px 24px; border-bottom: 1px solid #f8fafc; transition: background .15s; }
+        .aj-row:last-child { border-bottom: none; }
+        .aj-row:hover { background: #fafbff; }
+        .aj-icon { width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0; background: #ede9fe; color: #4f46e5; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .aj-info { flex: 1; min-width: 0; }
+        .aj-title { font-size: 14px; font-weight: 700; color: #1e293b; }
+        .aj-meta  { font-size: 11px; color: #94a3b8; margin-top: 3px; display: flex; flex-wrap: wrap; gap: 8px; }
+        .aj-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; text-transform: capitalize; flex-shrink: 0; }
+        .aj-badge.shortlisted { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
+        .aj-badge.pending     { background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; }
+        .aj-badge.rejected    { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; }
+        .aj-footer { padding: 12px 24px; border-top: 1px solid #f1f5f9; font-size: 12px; color: #94a3b8; text-align: center; flex-shrink: 0; }
+    </style>
+
+    <div class="aj-overlay" id="ajOverlay">
+        <div class="aj-drawer">
+            <div class="aj-header">
+                <div>
+                    <h2>📋 My Applications</h2>
+                    <p id="ajSubtitle">All jobs you've applied to</p>
+                </div>
+                <button class="aj-close" onclick="closeAppliedJobsModal()">✕</button>
+            </div>
+            <div class="aj-filter-bar">
+                <button class="aj-filter-btn active" onclick="ajFilter('all', this)">All</button>
+                <button class="aj-filter-btn" onclick="ajFilter('pending', this)">Pending</button>
+                <button class="aj-filter-btn" onclick="ajFilter('shortlisted', this)">Shortlisted</button>
+                <button class="aj-filter-btn" onclick="ajFilter('rejected', this)">Rejected</button>
+            </div>
+            <div class="aj-body" id="ajBody">
+                <div style="padding:40px;text-align:center;">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto"></div>
+                </div>
+            </div>
+            <div class="aj-footer">
+                <a href="job-listings.html" style="color:#4f46e5;font-weight:600;">Browse more jobs →</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let _ajAllApps = [];
+        let _ajLoaded  = false;
+
+        function openAppliedJobsModal() {
+            document.getElementById('ajOverlay').classList.add('active');
+            if (!_ajLoaded) fetchAppliedJobs();
+        }
+        function closeAppliedJobsModal() {
+            document.getElementById('ajOverlay').classList.remove('active');
+        }
+        document.getElementById('ajOverlay').addEventListener('click', e => {
+            if (e.target === document.getElementById('ajOverlay')) closeAppliedJobsModal();
+        });
+
+        async function fetchAppliedJobs() {
+            try {
+                const res  = await fetch(`${API_URL}/jobs/my-applications`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error('API error');
+                _ajAllApps = await res.json();
+                _ajLoaded  = true;
+                renderAjRows(_ajAllApps);
+                document.getElementById('ajSubtitle').textContent =
+                    `${_ajAllApps.length} application${_ajAllApps.length !== 1 ? 's' : ''} total`;
+            } catch (err) {
+                document.getElementById('ajBody').innerHTML = `
+                    <div class="aj-empty">
+                        <i class="fas fa-exclamation-circle" style="color:#ef4444"></i>
+                        <p style="font-weight:600;color:#475569;">Could not load applications</p>
+                        <p style="font-size:13px;">Make sure the server is running.</p>
+                    </div>`;
+            }
+        }
+
+        function ajFilter(status, btn) {
+            document.querySelectorAll('.aj-filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const filtered = status === 'all' ? _ajAllApps : _ajAllApps.filter(a => a.status === status);
+            renderAjRows(filtered);
+        }
+
+        function renderAjRows(apps) {
+            const body = document.getElementById('ajBody');
+            if (!apps || apps.length === 0) {
+                body.innerHTML = `
+                    <div class="aj-empty">
+                        <i class="fas fa-folder-open"></i>
+                        <p style="font-weight:600;color:#475569;margin-bottom:4px;">No applications here</p>
+                        <p style="font-size:13px;">Try a different filter or browse jobs to apply.</p>
+                    </div>`;
+                return;
+            }
+            body.innerHTML = apps.map(a => {
+                const date = new Date(a.applied_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                const badgeCls   = a.status === 'shortlisted' ? 'shortlisted' : a.status === 'rejected' ? 'rejected' : 'pending';
+                const statusIcon = a.status === 'shortlisted' ? 'fa-check-circle' : a.status === 'rejected' ? 'fa-times-circle' : 'fa-clock';
+                return `
+                <div class="aj-row">
+                    <div class="aj-icon"><i class="fas fa-briefcase"></i></div>
+                    <div class="aj-info">
+                        <div class="aj-title">${a.job_title}</div>
+                        <div class="aj-meta">
+                            <span><i class="fas fa-map-marker-alt mr-1"></i>${a.job_location || '—'}</span>
+                            <span><i class="fas fa-calendar mr-1"></i>${date}</span>
+                            ${a.is_paid ? '<span style="color:#10b981;"><i class="fas fa-receipt mr-1"></i>₹99 paid</span>' : ''}
+                        </div>
+                    </div>
+                    <span class="aj-badge ${badgeCls}">
+                        <i class="fas ${statusIcon}" style="font-size:10px;"></i> ${a.status}
+                    </span>
+                </div>`;
+            }).join('');
+        }
+    </script>
+</body>
+</html>

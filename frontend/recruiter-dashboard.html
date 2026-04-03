@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recruiter Dashboard | PHP Talent Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 font-sans min-h-screen">
+
+    <!-- Loading overlay -->
+    <div id="auth-overlay" class="fixed inset-0 bg-white z-[9999] flex items-center justify-center">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+            <p class="text-gray-500 font-medium">Loading dashboard…</p>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <a href="index.html" class="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">PHP Talent Hub</a>
+                <div class="flex items-center space-x-4">
+                    <div class="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold border border-purple-200" id="user-avatar">R</div>
+                    <button id="logout-btn" class="text-gray-600 hover:text-red-600 transition font-medium">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Welcome Header -->
+        <div class="mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Welcome, <span id="user-name" class="text-purple-600">Recruiter</span>! 👋</h1>
+                <p class="text-gray-600 mt-2">Manage your job postings and find the best PHP talent.</p>
+            </div>
+            <button id="post-job-btn" class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg flex items-center">
+                <i class="fas fa-plus mr-2"></i> Post New Job
+            </button>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <button onclick="openActiveJobsModal()" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-left hover:border-indigo-300 hover:shadow-md transition duration-200 group cursor-pointer w-full">
+                <div class="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 mb-4 group-hover:bg-indigo-100 transition"><i class="fas fa-briefcase text-xl"></i></div>
+                <h3 class="text-gray-500 text-sm font-medium">Active Jobs</h3>
+                <p class="text-2xl font-bold text-gray-900 mt-1" id="active-jobs-count">—</p>
+                <p class="text-indigo-600 text-xs font-semibold mt-1 group-hover:underline">View all →</p>
+            </button>
+            <button onclick="openAllApplicantsModal()" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-left hover:border-purple-300 hover:shadow-md transition duration-200 group cursor-pointer w-full">
+                <div class="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600 mb-4 group-hover:bg-purple-100 transition"><i class="fas fa-users text-xl"></i></div>
+                <h3 class="text-gray-500 text-sm font-medium">Total Applications</h3>
+                <p class="text-2xl font-bold text-gray-900 mt-1" id="total-apps-count">—</p>
+                <p class="text-purple-600 text-xs font-semibold mt-1 group-hover:underline">View top applicants →</p>
+            </button>
+            <button onclick="openShortlistedModal()" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-left hover:border-green-300 hover:shadow-md transition duration-200 group cursor-pointer w-full">
+                <div class="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center text-green-600 mb-4 group-hover:bg-green-100 transition"><i class="fas fa-user-check text-xl"></i></div>
+                <h3 class="text-gray-500 text-sm font-medium">Shortlisted</h3>
+                <p class="text-2xl font-bold text-gray-900 mt-1" id="shortlisted-count">—</p>
+                <p class="text-green-600 text-xs font-semibold mt-1 group-hover:underline">View shortlisted →</p>
+            </button>
+            <button onclick="openCreditsModal()" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-left hover:border-orange-300 hover:shadow-md transition duration-200 group cursor-pointer w-full">
+                <div class="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600 mb-4 group-hover:bg-orange-100 transition"><i class="fas fa-wallet text-xl"></i></div>
+                <h3 class="text-gray-500 text-sm font-medium">Credits</h3>
+                <p class="text-2xl font-bold text-gray-900 mt-1" id="credits-count">5</p>
+                <p class="text-orange-500 text-xs font-semibold mt-1 group-hover:underline">View details →</p>
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left: Jobs + Developers -->
+            <div class="lg:col-span-2 space-y-6">
+
+                <!-- My Active Jobs -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                        <h2 class="font-bold text-gray-900 text-lg">My Active Jobs</h2>
+                        <span class="text-xs text-gray-400">Click a job to see applicants</span>
+                    </div>
+                    <div id="jobs-list" class="divide-y divide-gray-50">
+                        <div class="p-12 text-center">
+                            <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-paper-plane text-gray-300 text-3xl"></i>
+                            </div>
+                            <h3 class="text-gray-900 font-bold">No active jobs</h3>
+                            <p class="text-gray-500 mt-2 text-sm">Post your first job to start receiving applications.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Applicants Panel (hidden until a job is clicked) -->
+                <div id="applicants-panel" class="hidden bg-white rounded-2xl shadow-sm border border-indigo-100 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                        <div>
+                            <h2 class="font-bold text-gray-900 text-lg">Applicants for: <span id="applicants-job-title" class="text-indigo-600"></span></h2>
+                            <p class="text-xs text-gray-400 mt-1">Review and update status of each applicant</p>
+                        </div>
+                        <button id="close-applicants" class="text-gray-400 hover:text-gray-600 text-sm"><i class="fas fa-times"></i> Close</button>
+                    </div>
+                    <div id="applicants-list" class="divide-y divide-gray-50">
+                        <div class="p-8 text-center">
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Available PHP Talent -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="p-6 border-b border-gray-50 flex justify-between items-center">
+                        <h2 class="font-bold text-gray-900 text-lg">Available PHP Talent</h2>
+                        <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full" id="dev-count">—</span>
+                    </div>
+                    <div id="developers-list" class="divide-y divide-gray-50">
+                        <div class="p-8 text-center">
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <h2 class="font-bold text-gray-900 text-lg mb-4">Quick Search</h2>
+                    <div class="space-y-3">
+                        <input type="text" id="search-skill" placeholder="e.g. Laravel, React"
+                            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <input type="text" id="search-location" placeholder="Location (optional)"
+                            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <button id="search-btn" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition">
+                            <i class="fas fa-search mr-2"></i> Find Talent
+                        </button>
+                        <button id="clear-search-btn" class="hidden w-full bg-gray-100 text-gray-600 font-bold py-2 rounded-lg hover:bg-gray-200 transition text-sm">
+                            Clear Search
+                        </button>
+                    </div>
+                    <p id="search-result-info" class="hidden mt-3 text-xs text-indigo-600 font-medium"></p>
+                </div>
+                <div class="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl p-6 text-white">
+                    <h3 class="font-bold text-lg mb-2">Hire Smarter 🎯</h3>
+                    <p class="text-indigo-100 text-sm mb-6">Unlock AI-powered candidate matching.</p>
+                    <button class="w-full bg-white text-indigo-600 font-bold py-3 rounded-lg hover:bg-indigo-50 transition">Upgrade Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Post Job Modal -->
+    <div id="post-job-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white max-w-2xl w-full p-8 rounded-2xl shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-900">Post a New Job</h3>
+                <button id="close-modal" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <form id="post-job-form" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Job Title</label>
+                        <input type="text" name="title" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Location</label>
+                        <input type="text" name="location" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Frameworks</label>
+                        <input type="text" name="frameworks" required placeholder="e.g. Laravel, Symfony" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Experience Required</label>
+                        <input type="text" name="experience_required" required placeholder="e.g. 2-4" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Salary Range</label>
+                        <input type="text" name="salary_range" required placeholder="e.g. ₹10-18 LPA" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Job Type</label>
+                        <select name="job_type" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                            <option>Full-time</option>
+                            <option>Part-time</option>
+                            <option>Contract</option>
+                            <option>Remote</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                    <textarea name="description" rows="4" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl hover:bg-indigo-700 transition">Post Job</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Developer Detail Modal -->
+    <div id="dev-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white max-w-lg w-full rounded-2xl shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div class="flex justify-between items-center p-6 border-b">
+                <h3 class="text-xl font-bold text-gray-900">Developer Profile</h3>
+                <button id="close-dev-modal" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div id="dev-modal-body" class="p-6 space-y-5">
+                <!-- Filled by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:5000/api';
+        const token   = localStorage.getItem('token');
+        const overlay = document.getElementById('auth-overlay');
+        const userRole = localStorage.getItem('role');
+
+        if (!token) {
+            window.location.href = 'login.html';
+        } else if (userRole !== 'recruiter') {
+            window.location.href = 'developer-dashboard.html';
+        } else {
+            const userName = localStorage.getItem('name') || 'Recruiter';
+            document.getElementById('user-name').textContent  = userName;
+            document.getElementById('user-avatar').textContent = userName.charAt(0).toUpperCase();
+            overlay.style.display = 'none';
+
+            // ── Logout ──────────────────────────────────────────────────────────
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                localStorage.clear();
+                window.location.href = 'login.html';
+            });
+
+            // ── Post Job Modal ───────────────────────────────────────────────────
+            const modal = document.getElementById('post-job-modal');
+            document.getElementById('post-job-btn').addEventListener('click', () => modal.classList.remove('hidden'));
+            document.getElementById('close-modal').addEventListener('click', () => modal.classList.add('hidden'));
+
+            document.getElementById('post-job-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const btn = e.target.querySelector('button[type="submit"]');
+                btn.textContent = 'Posting…'; btn.disabled = true;
+                const data = Object.fromEntries(new FormData(e.target).entries());
+                try {
+                    const res = await fetch(`${API_URL}/jobs/`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify(data)
+                    });
+                    const result = await res.json();
+                    if (res.ok) {
+                        alert('Job posted successfully!');
+                        modal.classList.add('hidden');
+                        e.target.reset();
+                        loadMyJobs();
+                    } else {
+                        alert(result.message || 'Failed to post job.');
+                    }
+                } catch { alert('Connection error.'); }
+                finally { btn.textContent = 'Post Job'; btn.disabled = false; }
+            });
+
+            // ── Load Jobs ────────────────────────────────────────────────────────
+            async function loadMyJobs() {
+                try {
+                    const res  = await fetch(`${API_URL}/jobs/my-jobs`, { headers: { 'Authorization': `Bearer ${token}` } });
+                    if (!res.ok) return;
+                    const jobs = await res.json();
+                    if (!Array.isArray(jobs)) return;
+
+                    document.getElementById('active-jobs-count').textContent = jobs.length;
+                    const total = jobs.reduce((s, j) => s + (j.applications_count || 0), 0);
+                    document.getElementById('total-apps-count').textContent = total;
+
+                    // Fetch shortlisted count across all jobs
+                    if (jobs.length > 0) {
+                        Promise.all(
+                            jobs.map(j =>
+                                fetch(`${API_URL}/recruiter/jobs/${j.id}/applicants`, { headers: { 'Authorization': `Bearer ${token}` } })
+                                    .then(r => r.json()).then(apps => apps.filter(a => a.status === 'shortlisted').length).catch(() => 0)
+                            )
+                        ).then(counts => {
+                            document.getElementById('shortlisted-count').textContent = counts.reduce((a, b) => a + b, 0);
+                        });
+                    } else {
+                        document.getElementById('shortlisted-count').textContent = 0;
+                    }
+
+                    if (jobs.length === 0) return;
+
+                    document.getElementById('jobs-list').innerHTML = jobs.map(j => `
+                        <div class="p-5 hover:bg-indigo-50 transition cursor-pointer group border-l-4 border-transparent hover:border-indigo-500"
+                             onclick="loadApplicants(${j.id}, '${j.title.replace(/'/g,"\\'")}')">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-bold text-gray-900 group-hover:text-indigo-700 transition">${j.title}</h4>
+                                    <p class="text-sm text-gray-500 mt-1">${j.location || '—'} • ${j.job_type || '—'} • ${j.frameworks || '—'}</p>
+                                    <p class="text-xs text-indigo-600 font-bold mt-2">
+                                        <i class="fas fa-users mr-1"></i>${j.applications_count || 0} application${j.applications_count !== 1 ? 's' : ''}
+                                    </p>
+                                </div>
+                                <div class="text-gray-300 group-hover:text-indigo-500 transition">
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                            </div>
+                        </div>`).join('');
+                } catch (err) { console.warn('Jobs load failed:', err.message); }
+            }
+
+            // ── Load Applicants for a Job ─────────────────────────────────────────
+            window.loadApplicants = async function(jobId, jobTitle) {
+                const panel = document.getElementById('applicants-panel');
+                const list  = document.getElementById('applicants-list');
+                document.getElementById('applicants-job-title').textContent = jobTitle;
+                panel.classList.remove('hidden');
+                panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                list.innerHTML = '<div class="p-8 text-center"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div></div>';
+
+                try {
+                    const res  = await fetch(`${API_URL}/recruiter/jobs/${jobId}/applicants`, { headers: { 'Authorization': `Bearer ${token}` } });
+                    const data = await res.json();
+
+                    if (!res.ok) { list.innerHTML = `<div class="p-8 text-center text-red-400 text-sm">${data.message || 'Failed to load.'}</div>`; return; }
+                    if (data.length === 0) {
+                        list.innerHTML = '<div class="p-8 text-center text-gray-400 text-sm"><i class="fas fa-inbox text-3xl mb-3 block"></i>No applications yet for this job.</div>';
+                        return;
+                    }
+
+                    list.innerHTML = data.map(app => `
+                        <div class="p-5 hover:bg-gray-50 transition border-b border-gray-50 last:border-0" id="app-row-${app.id}">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="flex items-start space-x-3 min-w-0">
+                                    <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold shrink-0 mt-0.5">
+                                        ${app.name.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="flex items-center flex-wrap gap-2">
+                                            <h4 class="font-bold text-gray-900">${app.name}</h4>
+                                            ${app.is_paid ? 
+                                                '<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-full border border-emerald-200"><i class="fas fa-check-circle"></i> Paid ₹99</span>' :
+                                                '<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-400 text-[10px] font-bold rounded-full">Free Apply</span>'
+                                            }
+                                        </div>
+                                        <div class="flex flex-wrap gap-3 text-xs text-gray-500 mt-1">
+                                            ${app.profile.experience != null ? `<span><i class="fas fa-briefcase mr-1 text-indigo-300"></i>${app.profile.experience} yrs exp</span>` : ''}
+                                            ${app.profile.location    ? `<span><i class="fas fa-map-marker-alt mr-1 text-indigo-300"></i>${app.profile.location}</span>` : ''}
+                                            ${app.profile.resume      ? `<span class="text-rose-500 font-semibold"><i class="fas fa-file-pdf mr-1"></i>Resume attached</span>` : '<span class="text-gray-300"><i class="fas fa-file-pdf mr-1"></i>No resume</span>'}
+                                        </div>
+                                        <p class="text-[11px] text-gray-400 mt-1.5">
+                                            <i class="fas fa-clock mr-1"></i>Applied: ${new Date(app.applied_at).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'})}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col items-end gap-2 shrink-0">
+                                    <span id="status-badge-${app.id}" class="px-3 py-1 rounded-full text-xs font-bold ${statusBadgeClass(app.status)}">${capitalize(app.status)}</span>
+                                    <div class="flex gap-1" id="action-btns-${app.id}">
+                                        <button onclick="updateStatus(${app.id}, 'shortlisted')" title="Shortlist"
+                                            class="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 font-bold transition">
+                                            <i class="fas fa-check mr-1"></i>Shortlist
+                                        </button>
+                                        ${app.status !== 'shortlisted' ? `
+                                        <button onclick="updateStatus(${app.id}, 'rejected')" title="Reject"
+                                            class="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 font-bold transition">
+                                            <i class="fas fa-times mr-1"></i>Reject
+                                        </button>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`).join('');
+
+                    // Update stats
+                    const shortlisted = data.filter(a => a.status === 'shortlisted').length;
+                    const paidCount   = data.filter(a => a.is_paid).length;
+                    document.getElementById('shortlisted-count').textContent = shortlisted;
+
+                    // Show paid summary in the panel header
+                    const existingSummary = document.getElementById('paid-summary');
+                    if (existingSummary) existingSummary.remove();
+                    if (paidCount > 0) {
+                        const summaryEl = document.createElement('div');
+                        summaryEl.id = 'paid-summary';
+                        summaryEl.className = 'px-6 py-2 bg-emerald-50 border-b border-emerald-100 text-xs text-emerald-700 font-semibold flex items-center gap-2';
+                        summaryEl.innerHTML = `<i class="fas fa-indian-rupee-sign"></i> ${paidCount} of ${data.length} applicant${data.length > 1 ? 's' : ''} paid the ₹99 application fee`;
+                        list.before(summaryEl);
+                    }
+
+                } catch (err) {
+                    list.innerHTML = '<div class="p-8 text-center text-red-400 text-sm">Connection error.</div>';
+                }
+            };
+
+            // Close applicants panel
+            document.getElementById('close-applicants').addEventListener('click', () => {
+                document.getElementById('applicants-panel').classList.add('hidden');
+            });
+
+            // ── Update Applicant Status ──────────────────────────────────────────
+            window.updateStatus = async function(appId, status) {
+                try {
+                    const res = await fetch(`${API_URL}/recruiter/applicants/${appId}/status`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ status })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        const badge = document.getElementById(`status-badge-${appId}`);
+                        if (badge) {
+                            badge.textContent = capitalize(status);
+                            badge.className   = `px-3 py-1 rounded-full text-xs font-bold ${statusBadgeClass(status)}`;
+                        }
+                        // Hide the Reject button once shortlisted
+                        if (status === 'shortlisted') {
+                            const btns = document.getElementById(`action-btns-${appId}`);
+                            if (btns) {
+                                const rejectBtn = btns.querySelector('button[title="Reject"]');
+                                if (rejectBtn) rejectBtn.remove();
+                            }
+                        }
+                        if (status === 'shortlisted' && data.interview_date) {
+                            showToast(
+                                '✅ Shortlisted!',
+                                `Congratulations email sent. Interview scheduled for <strong>${data.interview_date}</strong>.`,
+                                'green'
+                            );
+                            // Refresh the shortlisted modal data
+                            if (typeof refreshShortlistedModal === 'function') refreshShortlistedModal();
+                        } else if (status === 'rejected') {
+                            showToast('❌ Rejected', 'Applicant status updated to rejected.', 'red');
+                        }
+                    } else {
+                        alert(data.message || 'Failed to update status.');
+                    }
+                } catch { alert('Connection error.'); }
+            };
+
+            // ── Toast Notification ───────────────────────────────────────────────
+            function showToast(title, message, color) {
+                const colors = {
+                    green: { bg: '#f0fdf4', border: '#86efac', title: '#15803d', text: '#166534', bar: '#22c55e' },
+                    red:   { bg: '#fef2f2', border: '#fca5a5', title: '#dc2626', text: '#7f1d1d', bar: '#ef4444' }
+                };
+                const c = colors[color] || colors.green;
+
+                // Remove existing toast
+                const existing = document.getElementById('shortlist-toast');
+                if (existing) existing.remove();
+
+                const toast = document.createElement('div');
+                toast.id = 'shortlist-toast';
+                toast.style.cssText = `
+                    position:fixed; bottom:28px; right:28px; z-index:9999;
+                    max-width:360px; width:calc(100vw - 56px);
+                    background:${c.bg}; border:1px solid ${c.border};
+                    border-radius:14px; box-shadow:0 8px 30px rgba(0,0,0,.12);
+                    overflow:hidden; animation:toastSlideIn .3s ease;
+                `;
+                toast.innerHTML = `
+                    <style>
+                        @keyframes toastSlideIn {
+                            from { transform: translateY(20px); opacity: 0; }
+                            to   { transform: translateY(0);    opacity: 1; }
+                        }
+                        @keyframes toastBar {
+                            from { width: 100%; }
+                            to   { width: 0%; }
+                        }
+                    </style>
+                    <div style="padding:16px 18px;">
+                        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+                            <div>
+                                <p style="margin:0 0 4px;font-weight:700;font-size:14px;color:${c.title};">${title}</p>
+                                <p style="margin:0;font-size:13px;color:${c.text};line-height:1.5;">${message}</p>
+                            </div>
+                            <button onclick="this.closest('#shortlist-toast').remove()"
+                                style="background:none;border:none;cursor:pointer;color:${c.title};font-size:16px;line-height:1;padding:0;flex-shrink:0;">✕</button>
+                        </div>
+                    </div>
+                    <div style="height:3px;background:#e5e7eb;">
+                        <div style="height:100%;background:${c.bar};animation:toastBar 5s linear forwards;"></div>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => { if (toast.parentNode) toast.remove(); }, 5200);
+            }
+
+            // ── Developer cache (populated by loadDevelopers, reused by viewDeveloper) ──
+            let _allDevs = [];
+
+            // ── Load Developers ──────────────────────────────────────────────────
+            async function loadDevelopers(skill = '', location = '') {
+                const listEl  = document.getElementById('developers-list');
+                const countEl = document.getElementById('dev-count');
+                listEl.innerHTML = '<div class="p-8 text-center"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div></div>';
+
+                try {
+                    // Build query params — backend supports exp_min & location
+                    // For skill search we filter client-side since the API filters by experience/location only
+                    const params = new URLSearchParams();
+                    if (location) params.append('location', location);
+
+                    const res  = await fetch(`${API_URL}/recruiter/search-developers?${params.toString()}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!res.ok) {
+                        listEl.innerHTML = '<div class="p-8 text-center text-gray-400 text-sm">Could not load developers.</div>';
+                        return;
+                    }
+                    let devs = await res.json();
+                    _allDevs = devs; // cache for viewDeveloper
+
+                    // Client-side skill filter (case-insensitive substring match)
+                    if (skill.trim()) {
+                        const q = skill.trim().toLowerCase();
+                        devs = devs.filter(d =>
+                            (d.skills || []).some(s => s.toLowerCase().includes(q)) ||
+                            d.name.toLowerCase().includes(q)
+                        );
+                    }
+
+                    countEl.textContent = `${devs.length} developer${devs.length !== 1 ? 's' : ''}`;
+
+                    // Show search result info
+                    const infoEl = document.getElementById('search-result-info');
+                    if (skill.trim() || location.trim()) {
+                        infoEl.textContent = `Showing ${devs.length} result${devs.length !== 1 ? 's' : ''} for "${[skill, location].filter(Boolean).join(', ')}"`;
+                        infoEl.classList.remove('hidden');
+                        document.getElementById('clear-search-btn').classList.remove('hidden');
+                    } else {
+                        infoEl.classList.add('hidden');
+                        document.getElementById('clear-search-btn').classList.add('hidden');
+                    }
+
+                    if (devs.length === 0) {
+                        listEl.innerHTML = `<div class="p-10 text-center">
+                            <i class="fas fa-search text-gray-200 text-4xl mb-3 block"></i>
+                            <p class="text-gray-500 font-medium">No developers found</p>
+                            <p class="text-gray-400 text-sm mt-1">Try a different skill or clear the search</p>
+                        </div>`;
+                        return;
+                    }
+
+                    listEl.innerHTML = devs.map(d => `
+                        <div class="p-5 hover:bg-gray-50 transition flex items-center justify-between gap-3">
+                            <div class="flex items-center space-x-4 min-w-0">
+                                <div class="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold shrink-0">
+                                    ${d.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div class="min-w-0">
+                                    <h4 class="font-bold text-gray-900 truncate">${d.name}</h4>
+                                    <p class="text-sm text-gray-500">${d.experience || 0} yrs • ${d.location || 'Remote'}</p>
+                                    <div class="mt-1 flex gap-1 flex-wrap">
+                                        ${(d.skills || []).slice(0, 4).map(s => `<span class="text-[10px] bg-gray-100 px-2 py-0.5 rounded text-gray-600 font-bold uppercase">${s}</span>`).join('')}
+                                        ${(d.skills || []).length > 4 ? `<span class="text-[10px] bg-gray-100 px-2 py-0.5 rounded text-gray-400">+${d.skills.length - 4}</span>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                            <button onclick="viewDeveloper(${d.id})"
+                                class="shrink-0 text-indigo-600 font-bold text-sm border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition">
+                                View
+                            </button>
+                        </div>`).join('');
+                } catch (err) {
+                    console.warn('Developers load failed:', err.message);
+                    listEl.innerHTML = '<div class="p-8 text-center text-gray-400 text-sm">Could not load developers.</div>';
+                }
+            }
+
+            // ── View Developer Details ────────────────────────────────────────────
+            window.viewDeveloper = function(devId) {
+                const modal = document.getElementById('dev-modal');
+                const body  = document.getElementById('dev-modal-body');
+                modal.classList.remove('hidden');
+
+                // Use cached list — no extra network call needed
+                const dev = _allDevs.find(d => d.id === devId);
+
+                try {
+                    if (!dev) {
+                        body.innerHTML = '<p class="text-center text-red-400 py-8">Developer not found. Try refreshing the talent list.</p>';
+                        return;
+                    }
+
+                    body.innerHTML = `
+                        <!-- Header -->
+                        <div class="flex items-center space-x-4 pb-4 border-b border-gray-100">
+                            <div class="h-16 w-16 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 flex items-center justify-center text-white font-bold text-2xl shrink-0">
+                                ${dev.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-900">${dev.name}</h3>
+                                <div class="flex flex-wrap gap-3 text-sm text-gray-500 mt-1">
+                                    ${dev.experience != null ? `<span><i class="fas fa-briefcase mr-1 text-indigo-400"></i>${dev.experience} yrs experience</span>` : ''}
+                                    ${dev.location ? `<span><i class="fas fa-map-marker-alt mr-1 text-indigo-400"></i>${dev.location}</span>` : ''}
+                                </div>
+                                ${dev.is_profile_complete ? '<span class="inline-flex items-center mt-2 px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700"><i class="fas fa-check-circle mr-1"></i>Profile Verified</span>' : ''}
+                            </div>
+                        </div>
+
+                        <!-- Skills -->
+                        ${dev.skills && dev.skills.length > 0 ? `
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-700 mb-2"><i class="fas fa-code mr-2 text-indigo-400"></i>Skills</h4>
+                            <div class="flex flex-wrap gap-2">
+                                ${dev.skills.map(s => `<span class="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full uppercase">${s}</span>`).join('')}
+                            </div>
+                        </div>` : ''}
+
+                        <!-- Professional Info -->
+                        <div class="bg-gray-50 rounded-xl p-4">
+                            <h4 class="text-sm font-bold text-gray-700 mb-3"><i class="fas fa-user-tie mr-2 text-indigo-400"></i>Professional Info</h4>
+                            <div class="grid grid-cols-2 gap-3 text-sm">
+                                ${dev.current_company ? `<div><span class="text-gray-400 text-xs block">Company</span><span class="font-semibold text-gray-800">${dev.current_company}</span></div>` : ''}
+                                ${dev.current_salary ? `<div><span class="text-gray-400 text-xs block">Current Salary</span><span class="font-semibold text-gray-800">${dev.current_salary}</span></div>` : ''}
+                                ${dev.notice_period ? `<div><span class="text-gray-400 text-xs block">Notice Period</span><span class="font-semibold text-gray-800">${dev.notice_period}</span></div>` : ''}
+                                <div><span class="text-gray-400 text-xs block">Availability</span><span class="font-semibold ${dev.available_for_hire !== false ? 'text-green-600' : 'text-red-500'}">${dev.available_for_hire !== false ? '✅ Available' : '🔴 Not available'}</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Contact Details -->
+                        <div class="bg-indigo-50 rounded-xl p-4 space-y-2">
+                            <h4 class="text-sm font-bold text-gray-700 mb-2"><i class="fas fa-address-card mr-2 text-indigo-400"></i>Contact Details</h4>
+                            ${dev.email ? `<div class="flex items-center gap-2 text-sm"><i class="fas fa-envelope text-indigo-400 w-4"></i><a href="mailto:${dev.email}" class="text-indigo-700 font-semibold hover:underline">${dev.email}</a></div>` : ''}
+                            ${dev.phone ? `<div class="flex items-center gap-2 text-sm"><i class="fas fa-phone text-indigo-400 w-4"></i><a href="tel:${dev.phone}" class="text-indigo-700 font-semibold hover:underline">${dev.phone}</a></div>` : '<div class="text-xs text-gray-400"><i class="fas fa-phone mr-1"></i>Phone not provided</div>'}
+                        </div>
+
+                        <!-- Links & Resume -->
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-700 mb-2"><i class="fas fa-link mr-2 text-indigo-400"></i>Links & Resume</h4>
+                            <div class="flex flex-wrap gap-2">
+                                ${dev.github_link ? `<a href="${dev.github_link}" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-900 text-white text-xs font-bold rounded-lg hover:bg-gray-700 transition"><i class="fab fa-github mr-1"></i>GitHub</a>` : ''}
+                                ${dev.linkedin_link ? `<a href="${dev.linkedin_link}" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition"><i class="fab fa-linkedin mr-1"></i>LinkedIn</a>` : ''}
+                                ${dev.portfolio_link ? `<a href="${dev.portfolio_link}" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white text-xs font-bold rounded-lg hover:bg-purple-700 transition"><i class="fas fa-globe mr-1"></i>Portfolio</a>` : ''}
+                                ${dev.resume_path ? `<a href="${API_URL.replace('/api','')}/uploads/${dev.resume_path}" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 bg-rose-500 text-white text-xs font-bold rounded-lg hover:bg-rose-600 transition"><i class="fas fa-file-pdf mr-1"></i>Resume</a>` : '<span class="text-xs text-gray-400 italic">No resume uploaded</span>'}
+                            </div>
+                        </div>
+
+                        <!-- Action -->
+                        <div class="flex gap-3 pt-2">
+                            <button onclick="document.getElementById('dev-modal').classList.add('hidden')"
+                                class="flex-1 bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition">
+                                Close
+                            </button>
+                        </div>
+                    `;
+                } catch (err) {
+                    body.innerHTML = '<p class="text-center text-red-400 py-8">Failed to load developer details.</p>';
+                }
+            };
+
+            document.getElementById('close-dev-modal').addEventListener('click', () => {
+                document.getElementById('dev-modal').classList.add('hidden');
+            });
+
+            // ── Quick Search ─────────────────────────────────────────────────────
+            document.getElementById('search-btn').addEventListener('click', () => {
+                const skill    = document.getElementById('search-skill').value;
+                const location = document.getElementById('search-location').value;
+                loadDevelopers(skill, location);
+                // Scroll to the developers section
+                document.getElementById('developers-list').closest('.bg-white').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+
+            // Enter key triggers search
+            ['search-skill', 'search-location'].forEach(id => {
+                document.getElementById(id).addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') document.getElementById('search-btn').click();
+                });
+            });
+
+            // Clear search
+            document.getElementById('clear-search-btn').addEventListener('click', () => {
+                document.getElementById('search-skill').value   = '';
+                document.getElementById('search-location').value = '';
+                loadDevelopers();
+            });
+
+            // ── Helpers ──────────────────────────────────────────────────────────
+            function statusBadgeClass(status) {
+                if (status === 'shortlisted') return 'bg-green-100 text-green-700';
+                if (status === 'rejected')    return 'bg-red-100 text-red-700';
+                return 'bg-yellow-100 text-yellow-700';
+            }
+
+            function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+
+            // ── Init ─────────────────────────────────────────────────────────────
+            loadMyJobs();
+            loadDevelopers();
+        }
+    </script>
+
+    <!-- ═══════════════════════════ ALL APPLICANTS MODAL ═══════════════════════════ -->
+    <style>
+        .aa-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.55); backdrop-filter:blur(4px); z-index:1100; align-items:flex-end; justify-content:center; }
+        .aa-overlay.active { display:flex; }
+        .aa-drawer { background:#fff; width:100%; max-width:800px; max-height:90vh; border-radius:24px 24px 0 0; display:flex; flex-direction:column; box-shadow:0 -12px 60px rgba(0,0,0,.15); animation:rjSlideUp .32s cubic-bezier(.34,1.3,.64,1); }
+        @media (min-width:640px) { .aa-overlay { align-items:center; } .aa-drawer { border-radius:20px; max-height:86vh; } }
+        .aa-header { padding:20px 24px 14px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+        .aa-header h2 { font-size:18px; font-weight:700; color:#1e293b; }
+        .aa-header p { font-size:12px; color:#94a3b8; margin-top:3px; }
+        .aa-close { width:32px; height:32px; border-radius:50%; border:none; background:#f1f5f9; color:#64748b; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .aa-close:hover { background:#e2e8f0; }
+        .aa-tabs { display:flex; gap:4px; padding:12px 24px; border-bottom:1px solid #f1f5f9; flex-shrink:0; }
+        .aa-tab { padding:6px 16px; border-radius:20px; font-size:13px; font-weight:600; border:none; cursor:pointer; background:#f1f5f9; color:#64748b; transition:all .15s; }
+        .aa-tab.active { background:#6366f1; color:#fff; }
+        .aa-body { overflow-y:auto; flex:1; }
+        .aa-row { display:flex; align-items:flex-start; gap:14px; padding:14px 24px; border-bottom:1px solid #f8fafc; transition:background .15s; }
+        .aa-row:hover { background:#fafbff; }
+        .aa-rank { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0; }
+        .aa-rank.gold { background:#fef9c3; color:#a16207; }
+        .aa-rank.silver { background:#f1f5f9; color:#475569; }
+        .aa-rank.bronze { background:#fdf2e9; color:#9a3412; }
+        .aa-rank.default { background:#ede9fe; color:#6d28d9; }
+        .aa-avatar { width:42px; height:42px; border-radius:50%; background:linear-gradient(135deg,#818cf8,#a78bfa); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex-shrink:0; }
+        .aa-info { flex:1; min-width:0; }
+        .aa-name { font-size:14px; font-weight:700; color:#1e293b; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+        .aa-meta { font-size:11px; color:#94a3b8; margin-top:3px; display:flex; flex-wrap:wrap; gap:10px; }
+        .aa-skills { display:flex; flex-wrap:wrap; gap:4px; margin-top:5px; }
+        .aa-skill { font-size:10px; background:#ede9fe; color:#6d28d9; padding:2px 8px; border-radius:10px; font-weight:700; text-transform:uppercase; }
+        .aa-job-badge { font-size:10px; background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; padding:2px 8px; border-radius:10px; font-weight:700; }
+        .aa-status { font-size:10px; font-weight:700; padding:3px 10px; border-radius:10px; }
+        .aa-status.shortlisted { background:#dcfce7; color:#15803d; }
+        .aa-status.rejected { background:#fee2e2; color:#991b1b; }
+        .aa-status.pending { background:#fef9c3; color:#a16207; }
+        .aa-paid { font-size:10px; background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; padding:2px 8px; border-radius:10px; font-weight:700; }
+        .aa-score { font-size:11px; color:#6366f1; font-weight:700; background:#ede9fe; padding:3px 9px; border-radius:10px; }
+        .aa-view-btn { font-size:12px; color:#6366f1; font-weight:600; background:none; border:none; cursor:pointer; padding:0; white-space:nowrap; }
+        .aa-view-btn:hover { text-decoration:underline; }
+        .aa-empty { padding:60px 24px; text-align:center; color:#94a3b8; }
+    </style>
+
+    <div class="aa-overlay" id="aaOverlay">
+        <div class="aa-drawer">
+            <div class="aa-header">
+                <div>
+                    <h2>🏆 Top Applicants</h2>
+                    <p id="aaSubtitle">Ranked by experience, skills & payment</p>
+                </div>
+                <button class="aa-close" onclick="closeAllApplicantsModal()">✕</button>
+            </div>
+            <div class="aa-tabs">
+                <button class="aa-tab active" onclick="filterAaTab('all', this)">All</button>
+                <button class="aa-tab" onclick="filterAaTab('shortlisted', this)">✅ Shortlisted</button>
+                <button class="aa-tab" onclick="filterAaTab('pending', this)">⏳ Pending</button>
+                <button class="aa-tab" onclick="filterAaTab('rejected', this)">❌ Rejected</button>
+            </div>
+            <div class="aa-body" id="aaBody">
+                <div style="padding:40px;text-align:center;">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let _aaAllApplicants = [];
+        let _aaLoaded = false;
+
+        function openAllApplicantsModal() {
+            document.getElementById('aaOverlay').classList.add('active');
+            if (!_aaLoaded) fetchAllApplicants();
+        }
+        function closeAllApplicantsModal() {
+            document.getElementById('aaOverlay').classList.remove('active');
+        }
+        document.getElementById('aaOverlay').addEventListener('click', e => {
+            if (e.target === document.getElementById('aaOverlay')) closeAllApplicantsModal();
+        });
+
+        function filterAaTab(status, btn) {
+            document.querySelectorAll('.aa-tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            const filtered = status === 'all' ? _aaAllApplicants : _aaAllApplicants.filter(a => a.status === status);
+            renderAaRows(filtered);
+        }
+
+        function aaScore(app) {
+            let s = 0;
+            if (app.is_paid) s += 40;
+            if (app.profile && app.profile.experience) s += Math.min(app.profile.experience * 5, 30);
+            if (app.profile && app.profile.resume) s += 15;
+            if (app.status === 'shortlisted') s += 15;
+            return Math.min(s, 100);
+        }
+
+        async function fetchAllApplicants() {
+            const body = document.getElementById('aaBody');
+            try {
+                const res = await fetch(`${API_URL}/jobs/my-jobs`, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (!res.ok) throw new Error();
+                const jobs = await res.json();
+
+                // Fetch applicants for all jobs in parallel
+                const allResults = await Promise.all(
+                    jobs.map(j =>
+                        fetch(`${API_URL}/recruiter/jobs/${j.id}/applicants`, { headers: { 'Authorization': `Bearer ${token}` } })
+                            .then(r => r.json())
+                            .then(apps => apps.map(a => ({ ...a, job_title: j.title, job_id: j.id })))
+                            .catch(() => [])
+                    )
+                );
+                _aaAllApplicants = allResults.flat();
+
+                // Sort by score desc
+                _aaAllApplicants.sort((a, b) => aaScore(b) - aaScore(a));
+
+                _aaLoaded = true;
+                document.getElementById('aaSubtitle').textContent =
+                    `${_aaAllApplicants.length} applicant${_aaAllApplicants.length !== 1 ? 's' : ''} across all jobs · ranked by score`;
+                renderAaRows(_aaAllApplicants);
+            } catch {
+                body.innerHTML = `<div class="aa-empty"><i class="fas fa-exclamation-circle" style="font-size:36px;color:#ef4444;margin-bottom:12px;display:block"></i><p style="font-weight:600;color:#475569;">Could not load applicants</p></div>`;
+            }
+        }
+
+        function renderAaRows(list) {
+            const body = document.getElementById('aaBody');
+            if (!list || list.length === 0) {
+                body.innerHTML = `<div class="aa-empty"><i class="fas fa-inbox" style="font-size:36px;margin-bottom:12px;display:block"></i><p style="font-weight:600;color:#475569;">No applicants found</p></div>`;
+                return;
+            }
+            body.innerHTML = list.map((app, idx) => {
+                const score = aaScore(app);
+                const rankClass = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : 'default';
+                const rankLabel = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+                const statusCls = app.status || 'pending';
+                return `
+                <div class="aa-row">
+                    <div class="aa-rank ${rankClass}">${rankLabel}</div>
+                    <div class="aa-avatar">${app.name.charAt(0).toUpperCase()}</div>
+                    <div class="aa-info">
+                        <div class="aa-name">
+                            ${app.name}
+                            ${app.is_paid ? '<span class="aa-paid">✓ Paid ₹99</span>' : ''}
+                            <span class="aa-status ${statusCls}">${statusCls.charAt(0).toUpperCase() + statusCls.slice(1)}</span>
+                        </div>
+                        <div class="aa-meta">
+                            ${app.profile && app.profile.experience != null ? `<span><i class="fas fa-briefcase mr-1"></i>${app.profile.experience} yrs</span>` : ''}
+                            ${app.profile && app.profile.location ? `<span><i class="fas fa-map-marker-alt mr-1"></i>${app.profile.location}</span>` : ''}
+                            ${app.profile && app.profile.resume ? `<span style="color:#f43f5e;font-weight:600"><i class="fas fa-file-pdf mr-1"></i>Resume</span>` : ''}
+                            <span><i class="fas fa-calendar mr-1"></i>${new Date(app.applied_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}</span>
+                        </div>
+                        <div class="aa-skills">
+                            <span class="aa-job-badge"><i class="fas fa-building mr-1"></i>${app.job_title || '—'}</span>
+                        </div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
+                        <span class="aa-score">Score: ${score}</span>
+                        <button class="aa-view-btn" onclick="closeAllApplicantsModal(); setTimeout(()=>loadApplicants(${app.job_id},'${(app.job_title||'').replace(/'/g,"\\'")}'),250)">View job →</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+    </script>
+
+    <!-- ═══════════════════════════ ACTIVE JOBS MODAL ═══════════════════════════ -->
+    <style>
+        .rj-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(15,23,42,.55); backdrop-filter: blur(4px);
+            z-index: 1200; align-items: flex-end; justify-content: center;
+        }
+        .rj-overlay.active { display: flex; }
+        .rj-drawer {
+            background: #fff; width: 100%; max-width: 720px; max-height: 88vh;
+            border-radius: 24px 24px 0 0; display: flex; flex-direction: column;
+            box-shadow: 0 -12px 60px rgba(0,0,0,.15);
+            animation: rjSlideUp .32s cubic-bezier(.34,1.3,.64,1);
+        }
+        @media (min-width: 640px) {
+            .rj-overlay { align-items: center; }
+            .rj-drawer { border-radius: 20px; max-height: 85vh; }
+        }
+        @keyframes rjSlideUp { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .rj-header { padding: 20px 24px 16px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+        .rj-header h2 { font-size: 18px; font-weight: 700; color: #1e293b; }
+        .rj-header p  { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+        .rj-close { width: 32px; height: 32px; border-radius: 50%; border: none; background: #f1f5f9; color: #64748b; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; }
+        .rj-close:hover { background: #e2e8f0; }
+        .rj-body { overflow-y: auto; flex: 1; padding: 8px 0; }
+        .rj-empty { padding: 48px 24px; text-align: center; color: #94a3b8; }
+        .rj-empty i { font-size: 40px; margin-bottom: 12px; display: block; }
+        .rj-row {
+            display: flex; align-items: flex-start; gap: 14px;
+            padding: 16px 24px; border-bottom: 1px solid #f8fafc;
+            cursor: pointer; transition: background .15s;
+        }
+        .rj-row:last-child { border-bottom: none; }
+        .rj-row:hover { background: #fafbff; }
+        .rj-icon { width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0; background: #ede9fe; color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .rj-info { flex: 1; min-width: 0; }
+        .rj-title { font-size: 14px; font-weight: 700; color: #1e293b; }
+        .rj-meta  { font-size: 11px; color: #94a3b8; margin-top: 3px; display: flex; flex-wrap: wrap; gap: 10px; }
+        .rj-apps-pill {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: #ede9fe; color: #6d28d9;
+            font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; flex-shrink: 0;
+        }
+        .rj-apps-pill.none { background: #f1f5f9; color: #94a3b8; }
+        .rj-view-btn {
+            font-size: 12px; color: #6366f1; font-weight: 600;
+            background: none; border: none; cursor: pointer; padding: 0; white-space: nowrap;
+        }
+        .rj-view-btn:hover { text-decoration: underline; }
+        .rj-footer { padding: 12px 24px; border-top: 1px solid #f1f5f9; font-size: 12px; color: #94a3b8; text-align: center; flex-shrink: 0; }
+    </style>
+
+    <div class="rj-overlay" id="rjOverlay">
+        <div class="rj-drawer">
+            <div class="rj-header">
+                <div>
+                    <h2>📌 My Active Jobs</h2>
+                    <p id="rjSubtitle">All jobs you've posted</p>
+                </div>
+                <button class="rj-close" onclick="closeActiveJobsModal()">✕</button>
+            </div>
+            <div class="rj-body" id="rjBody">
+                <div style="padding:40px;text-align:center;">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto"></div>
+                </div>
+            </div>
+            <div class="rj-footer">Click a job to see its applicants below on the dashboard</div>
+        </div>
+    </div>
+
+    <script>
+        let _rjLoaded = false;
+        let _rjJobs   = [];
+
+        function openActiveJobsModal() {
+            document.getElementById('rjOverlay').classList.add('active');
+            if (!_rjLoaded) fetchActiveJobs();
+        }
+        function closeActiveJobsModal() {
+            document.getElementById('rjOverlay').classList.remove('active');
+        }
+        document.getElementById('rjOverlay').addEventListener('click', e => {
+            if (e.target === document.getElementById('rjOverlay')) closeActiveJobsModal();
+        });
+
+        async function fetchActiveJobs() {
+            try {
+                const res  = await fetch(`${API_URL}/jobs/my-jobs`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error('API error');
+                _rjJobs  = await res.json();
+                _rjLoaded = true;
+                renderRjRows(_rjJobs);
+                document.getElementById('rjSubtitle').textContent =
+                    `${_rjJobs.length} job${_rjJobs.length !== 1 ? 's' : ''} posted`;
+            } catch (err) {
+                document.getElementById('rjBody').innerHTML = `
+                    <div class="rj-empty">
+                        <i class="fas fa-exclamation-circle" style="color:#ef4444"></i>
+                        <p style="font-weight:600;color:#475569;">Could not load jobs</p>
+                        <p style="font-size:13px;">Make sure the server is running.</p>
+                    </div>`;
+            }
+        }
+
+        function renderRjRows(jobs) {
+            const body = document.getElementById('rjBody');
+            if (!jobs || jobs.length === 0) {
+                body.innerHTML = `
+                    <div class="rj-empty">
+                        <i class="fas fa-paper-plane"></i>
+                        <p style="font-weight:600;color:#475569;margin-bottom:4px;">No jobs posted yet</p>
+                        <p style="font-size:13px;">Click "Post New Job" to get started.</p>
+                    </div>`;
+                return;
+            }
+            body.innerHTML = jobs.map(j => {
+                const count   = j.applications_count || 0;
+                const pillCls = count > 0 ? '' : 'none';
+                const date    = new Date(j.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                return `
+                <div class="rj-row" onclick="handleRjJobClick(${j.id}, '${j.title.replace(/'/g,"\\'")}')">
+                    <div class="rj-icon"><i class="fas fa-building"></i></div>
+                    <div class="rj-info">
+                        <div class="rj-title">${j.title}</div>
+                        <div class="rj-meta">
+                            <span><i class="fas fa-map-marker-alt mr-1"></i>${j.location || '—'}</span>
+                            <span><i class="fas fa-tag mr-1"></i>${j.job_type || '—'}</span>
+                            <span><i class="fas fa-calendar mr-1"></i>${date}</span>
+                        </div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
+                        <span class="rj-apps-pill ${pillCls}">
+                            <i class="fas fa-users" style="font-size:10px;"></i>
+                            ${count} applicant${count !== 1 ? 's' : ''}
+                        </span>
+                        <button class="rj-view-btn" onclick="event.stopPropagation();handleRjJobClick(${j.id}, '${j.title.replace(/'/g,"\\'")}')">
+                            View applicants →
+                        </button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function handleRjJobClick(jobId, jobTitle) {
+            closeActiveJobsModal();
+            // Small delay so modal closes before the panel scrolls into view
+            setTimeout(() => {
+                loadApplicants(jobId, jobTitle);
+            }, 200);
+        }
+    </script>
+    <!-- ═══════════════════════════ SHORTLISTED MODAL ═══════════════════════════ -->
+    <style>
+        .sl-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.55); backdrop-filter:blur(4px); z-index:1300; align-items:flex-end; justify-content:center; }
+        .sl-overlay.active { display:flex; }
+        .sl-drawer { background:#fff; width:100%; max-width:760px; max-height:90vh; border-radius:24px 24px 0 0; display:flex; flex-direction:column; box-shadow:0 -12px 60px rgba(0,0,0,.18); animation:slSlideUp .32s cubic-bezier(.34,1.3,.64,1); }
+        @media (min-width:640px) { .sl-overlay { align-items:center; } .sl-drawer { border-radius:20px; max-height:86vh; } }
+        @keyframes slSlideUp { from { transform:translateY(60px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+        .sl-header { padding:20px 24px 16px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+        .sl-header h2 { font-size:18px; font-weight:700; color:#1e293b; }
+        .sl-header p  { font-size:12px; color:#94a3b8; margin-top:3px; }
+        .sl-close { width:32px; height:32px; border-radius:50%; border:none; background:#f1f5f9; color:#64748b; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .15s; }
+        .sl-close:hover { background:#e2e8f0; }
+        .sl-body  { overflow-y:auto; flex:1; padding:8px 0; }
+        .sl-empty { padding:56px 24px; text-align:center; color:#94a3b8; }
+        .sl-empty i { font-size:40px; margin-bottom:12px; display:block; color:#d1fae5; }
+        .sl-card {
+            display:flex; align-items:flex-start; gap:14px;
+            padding:16px 24px; border-bottom:1px solid #f0fdf4;
+            transition:background .15s;
+        }
+        .sl-card:last-child { border-bottom:none; }
+        .sl-card:hover { background:#f0fdf4; }
+        .sl-avatar { width:46px; height:46px; border-radius:50%; background:linear-gradient(135deg,#34d399,#059669); color:#fff; font-size:18px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .sl-info { flex:1; min-width:0; }
+        .sl-name { font-size:15px; font-weight:700; color:#1e293b; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+        .sl-badge-shortlisted { font-size:10px; background:#dcfce7; color:#15803d; border:1px solid #86efac; padding:2px 9px; border-radius:10px; font-weight:700; }
+        .sl-badge-paid { font-size:10px; background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; padding:2px 9px; border-radius:10px; font-weight:700; }
+        .sl-meta { font-size:12px; color:#64748b; margin-top:4px; display:flex; flex-wrap:wrap; gap:12px; }
+        .sl-meta i { color:#a7f3d0; margin-right:3px; }
+        .sl-skills { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+        .sl-skill { font-size:10px; background:#ede9fe; color:#6d28d9; padding:2px 8px; border-radius:10px; font-weight:700; text-transform:uppercase; }
+        .sl-job-tag { font-size:10px; background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; padding:2px 9px; border-radius:10px; font-weight:700; }
+        .sl-interview { font-size:11px; background:#eff6ff; color:#3730a3; border:1px solid #c7d2fe; padding:4px 10px; border-radius:8px; font-weight:700; display:inline-flex; align-items:center; gap:5px; margin-top:6px; }
+        .sl-actions { display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0; }
+        .sl-links { display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-end; }
+        .sl-link-btn { font-size:11px; font-weight:700; padding:4px 10px; border-radius:7px; text-decoration:none; transition:opacity .15s; }
+        .sl-link-btn:hover { opacity:.8; }
+        .sl-link-gh { background:#1e293b; color:#fff; }
+        .sl-link-li { background:#0077b5; color:#fff; }
+        .sl-link-cv { background:#ef4444; color:#fff; }
+        .sl-footer { padding:12px 24px; border-top:1px solid #f1f5f9; font-size:12px; color:#94a3b8; text-align:center; flex-shrink:0; }
+    </style>
+
+    <div class="sl-overlay" id="slOverlay">
+        <div class="sl-drawer">
+            <div class="sl-header">
+                <div>
+                    <h2>✅ Shortlisted Developers</h2>
+                    <p id="slSubtitle">Loading…</p>
+                </div>
+                <button class="sl-close" onclick="closeShortlistedModal()">✕</button>
+            </div>
+            <div class="sl-body" id="slBody">
+                <div style="padding:40px;text-align:center;">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto"></div>
+                </div>
+            </div>
+            <div class="sl-footer">Shortlisted candidates will receive a congratulations email with interview schedule.</div>
+        </div>
+    </div>
+
+    <script>
+        let _slLoaded = false;
+        let _slData   = [];
+
+        function openShortlistedModal() {
+            document.getElementById('slOverlay').classList.add('active');
+            if (!_slLoaded) fetchShortlisted();
+        }
+        function closeShortlistedModal() {
+            document.getElementById('slOverlay').classList.remove('active');
+        }
+        document.getElementById('slOverlay').addEventListener('click', e => {
+            if (e.target === document.getElementById('slOverlay')) closeShortlistedModal();
+        });
+
+        async function fetchShortlisted() {
+            const body = document.getElementById('slBody');
+            try {
+                // Fetch all jobs, then all applicants, filter shortlisted
+                const jobsRes = await fetch(`${API_URL}/jobs/my-jobs`, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (!jobsRes.ok) throw new Error();
+                const jobs = await jobsRes.json();
+
+                const allResults = await Promise.all(
+                    jobs.map(j =>
+                        fetch(`${API_URL}/recruiter/jobs/${j.id}/applicants`, { headers: { 'Authorization': `Bearer ${token}` } })
+                            .then(r => r.json())
+                            .then(apps => apps.map(a => ({ ...a, job_title: j.title, job_id: j.id })))
+                            .catch(() => [])
+                    )
+                );
+
+                _slData   = allResults.flat().filter(a => a.status === 'shortlisted');
+                _slLoaded = true;
+
+                document.getElementById('slSubtitle').textContent =
+                    `${_slData.length} developer${_slData.length !== 1 ? 's' : ''} shortlisted across all jobs`;
+
+                renderSlCards(_slData);
+            } catch {
+                body.innerHTML = `<div class="sl-empty"><i class="fas fa-exclamation-circle" style="color:#ef4444"></i><p style="font-weight:600;color:#475569;">Could not load shortlisted developers</p></div>`;
+            }
+        }
+
+        function renderSlCards(list) {
+            const body = document.getElementById('slBody');
+            if (!list || list.length === 0) {
+                body.innerHTML = `
+                    <div class="sl-empty">
+                        <i class="fas fa-user-check"></i>
+                        <p style="font-weight:600;color:#475569;margin-bottom:4px;">No shortlisted developers yet</p>
+                        <p style="font-size:13px;">Shortlist applicants from a job's applicant panel.</p>
+                    </div>`;
+                return;
+            }
+
+            body.innerHTML = list.map(app => {
+                const initials = app.name.charAt(0).toUpperCase();
+                const exp      = app.profile && app.profile.experience != null ? `${app.profile.experience} yrs exp` : null;
+                const location = app.profile && app.profile.location ? app.profile.location : null;
+                const resume   = app.profile && app.profile.resume;
+                const appliedDate = new Date(app.applied_at).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+
+                // Interview date: shortlisted_at + 3 days
+                // We don't store shortlisted_at separately, so we approximate from applied_at
+                // Best UX: show "3 days from shortlisting" note
+                const interviewNote = '3 days from shortlisting date';
+
+                return `
+                <div class="sl-card">
+                    <div class="sl-avatar">${initials}</div>
+                    <div class="sl-info">
+                        <div class="sl-name">
+                            ${app.name}
+                            <span class="sl-badge-shortlisted">✓ Shortlisted</span>
+                            ${app.is_paid ? '<span class="sl-badge-paid">Paid ₹99</span>' : ''}
+                        </div>
+                        <div class="sl-meta">
+                            ${exp      ? `<span><i class="fas fa-briefcase"></i>${exp}</span>` : ''}
+                            ${location ? `<span><i class="fas fa-map-marker-alt"></i>${location}</span>` : ''}
+                            ${resume   ? `<span style="color:#ef4444;font-weight:600"><i class="fas fa-file-pdf" style="color:#fca5a5"></i>Resume attached</span>` : '<span><i class="fas fa-file-pdf"></i>No resume</span>'}
+                            <span><i class="fas fa-clock"></i>Applied: ${appliedDate}</span>
+                        </div>
+                        <div class="sl-skills">
+                            <span class="sl-job-tag"><i class="fas fa-building mr-1"></i>${app.job_title || '—'}</span>
+                        </div>
+                        <div class="sl-interview">
+                            <i class="fas fa-calendar-check"></i>
+                            Interview scheduled: ${interviewNote}
+                        </div>
+                        <div class="sl-links" style="margin-top:8px;">
+                            ${app.github_link   ? `<a href="${app.github_link}"   target="_blank" class="sl-link-btn sl-link-gh"><i class="fab fa-github mr-1"></i>GitHub</a>`       : ''}
+                            ${app.linkedin_link ? `<a href="${app.linkedin_link}" target="_blank" class="sl-link-btn sl-link-li"><i class="fab fa-linkedin mr-1"></i>LinkedIn</a>`   : ''}
+                            ${resume            ? `<a href="${API_URL.replace('/api','')}/uploads/${app.profile.resume}" target="_blank" class="sl-link-btn sl-link-cv"><i class="fas fa-file-pdf mr-1"></i>Resume</a>` : ''}
+                        </div>
+                    </div>
+                    <div class="sl-actions">
+                        <button onclick="closeShortlistedModal(); setTimeout(()=>loadApplicants(${app.job_id},'${(app.job_title||'').replace(/'/g,"\\'")}'),250)"
+                            class="text-xs text-indigo-600 font-bold border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition whitespace-nowrap">
+                            View Job →
+                        </button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // Allow external refresh (e.g. after shortlisting from the applicants panel)
+        window.refreshShortlistedModal = function() {
+            _slLoaded = false;
+            _slData   = [];
+            if (document.getElementById('slOverlay').classList.contains('active')) {
+                fetchShortlisted();
+            }
+        };
+    </script>
+    <!-- ═══════════════════════════ CREDITS MODAL ═══════════════════════════ -->
+    <style>
+        .cr-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.55); backdrop-filter:blur(4px); z-index:1400; align-items:flex-end; justify-content:center; }
+        .cr-overlay.active { display:flex; }
+        .cr-drawer { background:#fff; width:100%; max-width:560px; max-height:90vh; border-radius:24px 24px 0 0; display:flex; flex-direction:column; box-shadow:0 -12px 60px rgba(0,0,0,.18); animation:crSlideUp .32s cubic-bezier(.34,1.3,.64,1); }
+        @media (min-width:640px) { .cr-overlay { align-items:center; } .cr-drawer { border-radius:20px; max-height:86vh; } }
+        @keyframes crSlideUp { from { transform:translateY(60px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+        .cr-header { padding:20px 24px 16px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+        .cr-header h2 { font-size:18px; font-weight:700; color:#1e293b; }
+        .cr-header p  { font-size:12px; color:#94a3b8; margin-top:3px; }
+        .cr-close { width:32px; height:32px; border-radius:50%; border:none; background:#f1f5f9; color:#64748b; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .15s; }
+        .cr-close:hover { background:#e2e8f0; }
+        .cr-body  { overflow-y:auto; flex:1; padding:20px 24px; }
+        .cr-balance-box { background:linear-gradient(135deg,#f97316,#fb923c); border-radius:16px; padding:24px; color:#fff; text-align:center; margin-bottom:20px; }
+        .cr-balance-box .label { font-size:13px; font-weight:600; opacity:.85; margin-bottom:6px; }
+        .cr-balance-box .amount { font-size:48px; font-weight:800; line-height:1; }
+        .cr-balance-box .sub { font-size:12px; opacity:.75; margin-top:6px; }
+        .cr-what-title { font-size:13px; font-weight:700; color:#374151; margin-bottom:12px; }
+        .cr-item { display:flex; align-items:flex-start; gap:12px; padding:12px 0; border-bottom:1px solid #f8fafc; }
+        .cr-item:last-child { border-bottom:none; }
+        .cr-item-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+        .cr-item-icon.orange { background:#fff7ed; color:#ea580c; }
+        .cr-item-icon.green  { background:#f0fdf4; color:#16a34a; }
+        .cr-item-icon.blue   { background:#eff6ff; color:#2563eb; }
+        .cr-item-icon.purple { background:#faf5ff; color:#7c3aed; }
+        .cr-item-text { flex:1; }
+        .cr-item-text strong { display:block; font-size:13px; font-weight:700; color:#1e293b; }
+        .cr-item-text span   { font-size:12px; color:#64748b; }
+        .cr-item-cost { font-size:13px; font-weight:700; color:#ea580c; white-space:nowrap; flex-shrink:0; }
+        .cr-upgrade-btn { display:block; width:100%; margin-top:20px; background:linear-gradient(135deg,#f97316,#fb923c); color:#fff; font-weight:700; font-size:14px; padding:14px; border:none; border-radius:12px; cursor:pointer; transition:opacity .2s; text-align:center; }
+        .cr-upgrade-btn:hover { opacity:.9; }
+        .cr-history-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #f8fafc; font-size:13px; }
+        .cr-history-row:last-child { border-bottom:none; }
+        .cr-history-row .desc { color:#374151; font-weight:600; }
+        .cr-history-row .date { color:#94a3b8; font-size:11px; margin-top:2px; }
+        .cr-history-row .credit-change { font-weight:700; }
+        .cr-history-row .credit-change.plus  { color:#16a34a; }
+        .cr-history-row .credit-change.minus { color:#ef4444; }
+    </style>
+
+    <div class="cr-overlay" id="crOverlay">
+        <div class="cr-drawer">
+            <div class="cr-header">
+                <div>
+                    <h2>🪙 Credits</h2>
+                    <p>Manage your job posting credits</p>
+                </div>
+                <button class="cr-close" onclick="closeCreditsModal()">✕</button>
+            </div>
+            <div class="cr-body">
+
+                <!-- Balance -->
+                <div class="cr-balance-box">
+                    <div class="label">Available Credits</div>
+                    <div class="amount" id="cr-balance">5</div>
+                    <div class="sub">Each credit = 1 job posting</div>
+                </div>
+
+                <!-- What credits are used for -->
+                <p class="cr-what-title"><i class="fas fa-info-circle mr-1 text-orange-400"></i>What can you do with credits?</p>
+                <div>
+                    <div class="cr-item">
+                        <div class="cr-item-icon orange"><i class="fas fa-briefcase"></i></div>
+                        <div class="cr-item-text">
+                            <strong>Post a Job</strong>
+                            <span>Publish a new job listing to reach PHP developers</span>
+                        </div>
+                        <div class="cr-item-cost">1 credit</div>
+                    </div>
+                    <div class="cr-item">
+                        <div class="cr-item-icon blue"><i class="fas fa-bolt"></i></div>
+                        <div class="cr-item-text">
+                            <strong>Featured Job</strong>
+                            <span>Boost your job to the top of search results</span>
+                        </div>
+                        <div class="cr-item-cost">2 credits</div>
+                    </div>
+                    <div class="cr-item">
+                        <div class="cr-item-icon purple"><i class="fas fa-user-check"></i></div>
+                        <div class="cr-item-text">
+                            <strong>Unlock Developer Contact</strong>
+                            <span>View full contact details of a developer directly</span>
+                        </div>
+                        <div class="cr-item-cost">1 credit</div>
+                    </div>
+                    <div class="cr-item">
+                        <div class="cr-item-icon green"><i class="fas fa-envelope-open-text"></i></div>
+                        <div class="cr-item-text">
+                            <strong>Direct Outreach</strong>
+                            <span>Send a message to a developer who hasn't applied</span>
+                        </div>
+                        <div class="cr-item-cost">1 credit</div>
+                    </div>
+                </div>
+
+                <!-- Credit history -->
+                <p class="cr-what-title" style="margin-top:20px;"><i class="fas fa-history mr-1 text-orange-400"></i>Recent Activity</p>
+                <div id="cr-history">
+                    <div class="cr-history-row">
+                        <div>
+                            <div class="desc"><i class="fas fa-gift mr-1 text-orange-300"></i>Welcome bonus credits</div>
+                            <div class="date">Account created</div>
+                        </div>
+                        <div class="credit-change plus">+5</div>
+                    </div>
+                </div>
+
+                <!-- Upgrade CTA -->
+                <button class="cr-upgrade-btn" onclick="closeCreditsModal(); alert('Upgrade flow coming soon!')">
+                    <i class="fas fa-plus-circle mr-2"></i>Buy More Credits
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openCreditsModal() {
+            // Sync balance display with the dashboard count
+            const count = document.getElementById('credits-count').textContent;
+            document.getElementById('cr-balance').textContent = count;
+            document.getElementById('crOverlay').classList.add('active');
+        }
+        function closeCreditsModal() {
+            document.getElementById('crOverlay').classList.remove('active');
+        }
+        document.getElementById('crOverlay').addEventListener('click', e => {
+            if (e.target === document.getElementById('crOverlay')) closeCreditsModal();
+        });
+    </script>
+</body>
+</html>
