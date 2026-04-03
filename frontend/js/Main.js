@@ -1,6 +1,6 @@
 // main.js — shared utilities for PHP Talent Hub
 
-const API_URL = 'http://127.0.0.1:5000/api';
+const API_URL = '/api';
 
 /** Read token / user info from localStorage */
 function getSession() {
